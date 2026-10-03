@@ -67,7 +67,13 @@ def save_corpus(items: list[CorpusItem], directory: str | Path) -> None:
 
 
 def load_corpus(directory: str | Path) -> list[CorpusItem]:
-    return [CorpusItem(**json.loads(p.read_text(encoding="utf-8"))) for p in sorted(Path(directory).glob("*.json"))]
+    """Company items only: metadata files (corpus_meta.json, _corpus_stats.json) live in the same directory."""
+    items = []
+    for p in sorted(Path(directory).glob("*.json")):
+        data = json.loads(p.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and {"org", "name", "kind", "pages"} <= set(data):
+            items.append(CorpusItem(**data))
+    return items
 
 
 @dataclass

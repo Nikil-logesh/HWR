@@ -199,6 +199,8 @@ def test_review_sheet_samples_only_verified_real_facts():
 def test_corpus_roundtrip_and_injection_probes(tmp_path):
     items = corpus() + mb.injection_items()
     mb.save_corpus(items, tmp_path)
+    (tmp_path / "corpus_meta.json").write_text(json.dumps({"type": "register_text_proxy", "items": 5}))
+    (tmp_path / "_corpus_stats.json").write_text(json.dumps({"attempted": 3}))
     back = mb.load_corpus(tmp_path)
     assert {i.org for i in back} == {i.org for i in items} and all(i.kind in ("real", "injection") for i in back)
     assert all(mb.MARKER in i.pages[0]["text"] for i in mb.injection_items())
