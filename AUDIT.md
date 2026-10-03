@@ -19,3 +19,16 @@ occur; the register layer is keyed by the organisation number itself.
 Reviewer procedure: open the register link and compare identity rows; for each WEB row open the source URL and confirm
 (1) the page is this company (organisation number, or name + address), (2) the snippet is on the page and contains the
 value. One "wrong company" verdict means the identity gate has a hole: tighten `web/identity.py` and re-run.
+
+## First batch (2026-10-03, 1,500 seeded companies, register layer only)
+`make batch` -> 1,500 of 1,500 envelopes, 1,494 completed + 6 partial, 1,834 requests (1.22 per company), 288 s, $0,
+contract validation passed. Audit: 0 hard flags, 3 soft flags. All 3 are renames: the current Brreg bulk CSV holds
+a different name than the (older) frozen universe row for the same organisation number, e.g. 917265984 now
+`LG RENTAL AS` (was `LIER MASKINUTLEIE AS`). That check was first written as a hard flag; it was downgraded after
+inspection because the entity record's own organisation number was verified. Note the consequence: the frozen universe
+file is not current, so names must come from the register, never from the universe row, when both are available.
+The 6 partial profiles are accounts-endpoint HTTP 500 answers (a bank, a pension fund, a securities fund, 2 foundations,
+1 ordinary AS), recorded as `failed` for accounts while all other facts are published.
+Limitation: this sandbox cannot reach company websites, so the batch contains NO web facts and the web half of the
+audit sheet is empty. The web layer's wrong-company protection is covered by tests, not by a live audit; a batch
+run where websites are reachable must be audited before anything is trusted.

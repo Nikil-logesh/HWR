@@ -66,9 +66,11 @@ def test_register_evidence_naming_another_org_is_flagged():
     assert "register_evidence_for_other_org" in kinds(env)
 
 
-def test_legal_name_differing_from_universe_is_flagged_but_case_and_punctuation_are_not():
+def test_legal_name_differing_from_universe_is_a_soft_flag_but_case_and_punctuation_are_not():
     env = verified_envelope()
     assert "legal_name_differs_from_universe" in kinds(env, "NOE ANNET AS")
+    fl = [f for f in audit.audit_envelope(env, "NOE ANNET AS") if f["flag"] == "legal_name_differs_from_universe"]
+    assert fl[0]["severity"] == "soft"  # a rename since the snapshot, not a wrong company
     assert "legal_name_differs_from_universe" not in kinds(env, "syntetisk  testselskap as.")
 
 

@@ -5,9 +5,11 @@ HARD flags (a profile with any of them must not be published):
   low_identity_confidence              official website published with identity confidence < threshold
   web_source_domain_mismatch           a web fact's evidence comes from a different registered domain
   register_evidence_for_other_org      a register fact's source URL names another organisation number
-  legal_name_differs_from_universe     register name differs from the frozen universe row for this number
   financial_not_from_official_api      a financial value whose evidence is not the official accounts API
-SOFT flags (review): foreign_org_number_in_web_snippet, website_claims_without_snippet_support.
+SOFT flags (review): foreign_org_number_in_web_snippet, website_claims_without_snippet_support,
+  legal_name_differs_from_universe     the current register name differs from the (older) frozen universe row. The
+                                       record is keyed by the organisation number and its own number was verified, so
+                                       this is a rename since the snapshot (seen live: 3 of 1,500), not a wrong company.
 """
 from __future__ import annotations
 
@@ -29,7 +31,7 @@ WEB = "company_owned_website"
 ORG_IN_TEXT = re.compile(r"(?<!\d)(\d{3})[ .\u00a0]?(\d{3})[ .\u00a0]?(\d{3})(?!\d)")
 ORG_IN_URL = re.compile(r"/enheter/(\d{9})|overordnetEnhet=(\d{9})|/regnskap/(\d{9})|/regnskap/aarsregnskap/kopi/(\d{9})")
 HARD = {"web_facts_without_verified_identity", "low_identity_confidence", "web_source_domain_mismatch",
-        "register_evidence_for_other_org", "legal_name_differs_from_universe", "financial_not_from_official_api"}
+        "register_evidence_for_other_org", "financial_not_from_official_api"}
 
 
 def _norm(s: str) -> str:
