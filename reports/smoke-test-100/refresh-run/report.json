@@ -4,7 +4,7 @@
  "changes_total": 0,
  "companies_input": 100,
  "companies_with_changes": 0,
- "completed_at": "2026-10-03T05:18:51.368805Z",
+ "completed_at": "2026-10-03T06:12:31.822575Z",
  "contract_validation": {
   "checks": {
    "exactly_one_envelope_per_input": true,
@@ -23,8 +23,8 @@
   "cutoff_triggered": false,
   "initial_plan_estimate": {
    "entity": 100,
-   "estimated_requests": 340.0,
-   "estimated_requests_per_company": 3.4,
+   "estimated_requests": 370.0,
+   "estimated_requests_per_company": 3.7,
    "financials": 100,
    "roles": 100,
    "subunits": 100,
@@ -34,14 +34,19 @@
   "replans": 5
  },
  "coverage_companies_with_field": {
+  "careers_page": 0,
   "contact_email_1": 0,
   "contact_phone_1": 0,
   "employees": 18,
   "financials.revenue": 74,
   "financials.total_assets": 100,
+  "hiring_status": 0,
+  "latest_activity_date": 0,
   "legal_name": 100,
   "nace": 100,
   "official_website": 0,
+  "open_positions": 0,
+  "public_activity": 0,
   "registered_address": 100,
   "registry_website": 10,
   "roles": 100,
@@ -52,14 +57,19 @@
   "workplaces": 78
  },
  "coverage_pct": {
+  "careers_page": 0.0,
   "contact_email_1": 0.0,
   "contact_phone_1": 0.0,
   "employees": 18.0,
   "financials.revenue": 74.0,
   "financials.total_assets": 100.0,
+  "hiring_status": 0.0,
+  "latest_activity_date": 0.0,
   "legal_name": 100.0,
   "nace": 100.0,
   "official_website": 0.0,
+  "open_positions": 0.0,
+  "public_activity": 0.0,
   "registered_address": 100.0,
   "registry_website": 10.0,
   "roles": 100.0,
@@ -74,8 +84,8 @@
  "exactly_one_envelope_per_input": true,
  "mean_facts_per_company": 25.24,
  "operations": {
-  "company_runtime_ms_p50": 496,
-  "company_runtime_ms_p95": 1761,
+  "company_runtime_ms_p50": 498,
+  "company_runtime_ms_p95": 1787,
   "llm": null,
   "requests_per_company_max": 5,
   "requests_per_company_mean": 3.2,
@@ -83,7 +93,7 @@
   "requests_total_budgeted": 320,
   "requests_total_envelopes": 320,
   "third_party_cost_usd": 0.0,
-  "wall_clock_seconds": 28.39
+  "wall_clock_seconds": 28.8
  },
  "run_id": "smoke-refresh",
  "settings": {
@@ -95,7 +105,7 @@
   "web": true,
   "workers": 8
  },
- "started_at": "2026-10-03T05:18:39.364844Z",
+ "started_at": "2026-10-03T06:12:19.715249Z",
  "terminal_status_counts": {
   "completed": 100
  }

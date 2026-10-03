@@ -1,7 +1,7 @@
 # 100-company smoke test
 
 Input: `samples/daily.jsonl` (100 companies, seeded random draw from the 411,160-company universe, seed 20261003).
-Code: commit `6a04543` (later commits change documentation only). Date: 2026-10-03.
+Code: commit `0897f1f` (hiring/activity extraction included; later commits change documentation only). Date: 2026-10-03.
 Command (identical for both runs; the second reuses `out/smoke/state.sqlite`, i.e. it is a refresh run):
 
     uv run python run_agent.py run --organisations samples/daily.jsonl --bulk brreg-enheter.csv.gz \
@@ -20,6 +20,9 @@ Command (identical for both runs; the second reuses `out/smoke/state.sqlite`, i.
 
 Coverage (companies with the field): legal name, status, NACE, registered address, roles, total assets 100%;
 workplaces 78%; revenue 74%; employee count 18%; registry-listed website 10%.
+
+**Hiring and dated activity** are extracted only from a verified company website, so in this run (no website reachable) they
+are absent for all 100 companies; the new code ran but had nothing to extract from.
 
 **What this run does not show.** The sandbox that produced it could not reach company websites and had no LLM keys, so the
 10 companies that list a website returned `failed` for the website (no web facts) and no LLM was used (`--no-llm`).
