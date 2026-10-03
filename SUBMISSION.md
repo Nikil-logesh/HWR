@@ -45,7 +45,7 @@ Environment variables (all optional): `REQUEST_BUDGET_TOTAL`, `REQUEST_BUDGET_PE
 | **Measured, 1,500 companies** (bulk roles/workplaces/entity, no LLM) | 1,834 (1.22 per company), 288 s | $0 |
 | LLM add-on (not measured) | at most 1 call per company that lists a website (~11%): ~25k tokens per 100 companies | NVIDIA free tier: $0 (declared, unverified); Gemini Flash-Lite at the declared 0.10/0.40 USD per M tokens: ≈ $0.003 per 100 companies, ≈ $0.03 per 1,000 |
 
-Website requests (≤4 per website, throttled) were **not** exercised live; the planner budgets 4–5 per website-listing company
+Website requests (≤7 per website incl. careers/news/feed, throttled) were **not** exercised live; the planner budgets 7–8 per website-listing company
 (about 11% of companies). Official limits are unpublished: our defaults are 45 min / 2,000 requests / $10, configurable.
 
 ## Checklist against RULES.md "Official-run checks" and the kit's submission contract
@@ -56,7 +56,7 @@ Website requests (≤4 per website, throttled) were **not** exercised live; the 
 | 100-company smoke-test result in the public artifact | Met | `reports/smoke-test-100/` |
 | Exactly one terminal envelope per input | Met | 100/100 and 1,500/1,500; invalid ids and crashes still get a `failed` envelope; cutoff writes placeholders (`tests/test_budget_control.py`) |
 | Claim-level source, retrieval time, reporting period | Met | `signalpost.validate` runs in every run (`report.json › contract_validation`) |
-| Honest availability states, never zero | Met | six states; missing omitted; real 0 kept; hiring / dated activity are **not collected** and the explanation says so |
+| Honest availability states, never zero | Met | six states; missing omitted; real 0 kept; hiring / dated activity come only from a verified company site (heuristic, **never run on a real site**); profiles without one say they were not collected |
 | Idempotent refresh, prior snapshots preserved | Met on replays and live reruns | `REFRESH.md`; refresh run: 0 changes, identical results; no duplicate snapshot rows |
 | Reproducible setup, pinned deps, one evaluator command | Met | `uv.lock`; fresh-clone check recorded below |
 | Declared source rights, server-side secrets, safe URL handling | Met | `LIMITATIONS.md` (key-leak test, SSRF guard, robots.txt) |
@@ -70,7 +70,9 @@ Website requests (≤4 per website, throttled) were **not** exercised live; the 
 3. **LLM choice:** benchmarked on a proxy corpus only; re-run with `--source web` once websites are reachable, and
    measure Gemini Flash-Lite (needs a Google key) and re-test DeepSeek.
 4. **Official time / request / cost budgets** are unpublished; confirm them, or the defaults above apply.
-5. **Missing external families:** hiring and dated public activity are not collected (recall points on those are zero).
+5. **Hiring and dated activity** are extracted only from the company's own verified website (careers page, RSS feed / news
+   page) by conservative heuristics that have never run on a real site; ~89% of companies list no website, so they get
+   neither. Audit a real-website batch before relying on it (`AUDIT.md`).
 6. **Revisions:** up to four more commit hashes may be submitted before 18 Oct 2026 (five versions total); each revision
    is frozen before its next official run.
 

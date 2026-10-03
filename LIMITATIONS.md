@@ -10,10 +10,13 @@
    Norwegian company text in synthetic page boilerplate, not on real websites; Gemini Flash-Lite and DeepSeek were not
    measured (no key / timeouts). Only one model met the thresholds (gemma-4-31b-it, borderline on failures). The pipeline
    works without any LLM (deterministic extraction).
-3. **Not collected at all: hiring/job postings and dated public activity (news, press).** These are required envelope
-   sections and externally scored families. The agent states this in every profile's explanation instead of emitting a
-   misleading `not_available`. No search-engine, LinkedIn, Meta or review-site collection is performed (restricted
-   platforms; search results are not evidence).
+3. **Hiring and dated activity are collected only from the company's own verified website, with heuristics that have
+   never been run on a real site** (see `IDENTITY_RESOLUTION.md`). Recall will be low by design: precision comes first,
+   so a job listing needs deadline/employment context, news items need a real visible date, external recruitment
+   portals are only recorded as a link (never fetched), and a site that also names other organisation numbers (possible
+   group site) yields `ambiguous`, not facts. JavaScript-rendered career pages are invisible to the static fetch. Companies
+   without a listed website (~89%) get neither. No search-engine, job-board, LinkedIn, Meta or review-site collection is
+   performed (restricted platforms; search results are not evidence).
 4. **Group structure and annual-report PDF parsing are not implemented.** Financial history comes from the multi-year
    accounts response; filing-year lists are opt-in (rate-limited endpoint).
 5. **Envelope shape.** The agent follows `kit/OUTPUT_CONTRACT.md`. The kit's reference runner emits a different legacy
@@ -29,6 +32,14 @@
 9. **Refresh is verified on replays and live reruns of the same companies,** not on real register changes (none occurred
    during development). The entity endpoint sends no ETag, so changes are found by value/content-hash comparison.
 10. **Wall-clock cutoff is tested with a fake clock;** a real 45-minute run was never performed.
+
+## Extra risks of the hiring / activity layer (unmeasured)
+* A job listing is "listed on the company's own site", not verified against the posting's own page; stale listings
+  stay stale. Page structure varies enormously; false negatives are expected, false positives are possible where a
+  careers page contains links that look like postings (the context rule is the only guard).
+* Date parsing is day-first for numeric dates (Norwegian). A site using month-first numeric dates would be misread.
+* Up to 3 extra requests per website company (careers, feed or news): a verified-website company now costs up to 7
+  requests (planner estimate 7, +1 for the optional LLM).
 
 ## Source rights
 | source | use | terms |

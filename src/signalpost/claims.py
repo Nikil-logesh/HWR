@@ -27,6 +27,14 @@ class ClaimSet:
         self.claims.append(Claim(field=field, value=value, availability="available", confidence=confidence,
                                  evidence_ids=[ev], reporting_period=reporting_period, as_of=as_of, note=note))
 
+    def available_items(self, field: str, value: Any, evidence: list[dict[str, Any]], *, confidence: float,
+                        source_class: str, as_of: str | None = None, note: str | None = None) -> None:
+        """A list-valued claim with ONE evidence record per item (same order as the items in `value`)."""
+        ids = [self.add_evidence(source_url=e["source_url"], source_class=source_class, retrieved_at=e["retrieved_at"],
+                                 sha256=e["sha256"], span=e["span"], method=e["method"]) for e in evidence]
+        self.claims.append(Claim(field=field, value=value, availability="available", confidence=confidence,
+                                 evidence_ids=ids, as_of=as_of, note=note))
+
     def unavailable(self, field: str, availability: Availability, *, note: str, source_url: str | None = None,
                     source_class: str | None = None, retrieved_at: str | None = None, sha256: str | None = None,
                     method: str = "http_status") -> None:

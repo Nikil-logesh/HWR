@@ -156,7 +156,8 @@ def test_planner_counts_free_modules_as_zero_cost():
     cos = [Company(f"{i}", True, "62.010", frozenset({"roles", "subunits"})) for i in range(100)]
     plans = plan_batch(cos, 1000, 15)
     assert all({"roles", "subunits"} <= set(p.modules) for p in plans.values())
-    assert all(p.est_requests == 1 + 5 for p in plans.values())  # financials + (entity + web 4)
+    from signalpost.planner import WEB_COST
+    assert all(p.est_requests == 1 + 1 + WEB_COST for p in plans.values())  # financials + entity + web
     big = [Company(f"{i}", i % 9 == 0, "62.010", frozenset({"roles", "subunits"})) for i in range(1000)]
     from signalpost.planner import summarize
     s = summarize(plan_batch(big, 2000, 15))

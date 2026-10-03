@@ -47,7 +47,8 @@ def test_tight_budget_drops_lowest_value_tiers_first_and_never_overspends():
     s = summarize(plans)
     assert s["estimated_requests"] <= 2000 * 0.92
     assert s["financials"] == 1000  # highest-value tier is filled first
-    assert s["web"] == sum(c.has_website for c in cos)  # then the scarce web tier
+    sites = sum(c.has_website for c in cos)
+    assert 0.85 * sites <= s["web"] <= sites  # then the scarce web tier (7-8 requests each: most, not all, fit)
     assert s["subunits"] < 1000 and s["entity"] < 1000  # lowest tiers dropped under pressure
     assert s["financials"] >= s["roles"] >= s["subunits"]
 

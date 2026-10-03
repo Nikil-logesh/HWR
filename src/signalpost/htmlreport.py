@@ -22,6 +22,8 @@ SECTIONS = [
     ("Leadership", ("roles",)),
     ("Registered workplaces", ("workplaces",)),
     ("Website and public profiles", ("official_website", "website_", "contact_", "social_", "products_")),
+    ("Hiring and public activity", ("careers_page", "open_positions", "hiring_status", "public_activity",
+                                    "latest_activity_date")),
 ]
 E = html.escape
 

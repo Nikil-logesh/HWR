@@ -15,4 +15,10 @@ registry_website, roles, workplaces, financials.{revenue,operating_result,profit
 total_assets,equity,total_debt} (+ financials_consolidated.*), financial_history_years, registry_record.
 Financial values come only from Regnskapsregisteret JSON numbers and carry reporting_period.
 
+Hiring / activity (company's own verified site only): `careers_page` {url, kind: company_page|external_portal, portal?},
+`open_positions` [{title, url?, date?, date_text?, deadline?}], `hiring_status` (`hiring` | `no_open_positions`),
+`public_activity` [{title, url?, date, date_text}] (newest first, max 10), `latest_activity_date`. List claims carry one
+evidence record per item. States: `not_available` (checked, nothing recognised / none linked), `blocked` (robots.txt),
+`failed` (fetch error), `ambiguous` (site names other organisation numbers).
+
 Fixtures: tests/fixtures/recorded = 12 REAL Brreg responses (2026-10-03, birth dates scrubbed); tests/fixtures/synthetic = invented edge cases (bankrupt, liquidating, 410) the active-only pool cannot supply.

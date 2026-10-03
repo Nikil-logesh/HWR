@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 
 TIERS = ("financials", "web", "roles", "subunits", "entity")
 MODULE_ORDER = ("financials", "entity", "roles", "subunits")  # fetch order inside a company
-WEB_COST = 4  # robots.txt + homepage + ~1.5 secondary pages (worst case 4)
+WEB_COST = 7  # robots.txt + homepage + about/contact (<=2) + careers + feed/news (worst case 7)
 FINANCIAL_SECTOR_DIVISIONS = {"64", "65", "66"}  # banks/insurers: accounts endpoint often returns HTTP 500
 
 

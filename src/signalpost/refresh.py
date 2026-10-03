@@ -61,9 +61,23 @@ def _detail(old: Any, new: Any) -> dict[str, Any] | None:
     return None
 
 
+def _titles(c: Claim | None) -> set[str]:
+    return {str(i.get("title", "")).casefold() for i in (c.value or []) if isinstance(i, dict)} \
+        if c and c.availability == "available" and isinstance(c.value, list) else set()
+
+
 def _ctype(field: str, kind: str, old: Claim | None, new: Claim | None) -> str:
     if field == "registry_record":
         return "registry_record_change"
+    if field in ("open_positions", "public_activity"):
+        added, removed = _titles(new) - _titles(old), _titles(old) - _titles(new)
+        if field == "open_positions":
+            return "new_job_posting" if added and not removed else "closed_job" if removed and not added \
+                else "job_postings_changed"
+        return "new_activity" if added else "activity_items_removed"
+    if field in ("hiring_status", "careers_page", "latest_activity_date"):
+        return {"hiring_status": "hiring_status_change", "careers_page": "careers_page_change",
+                "latest_activity_date": "new_activity"}[field]
     if field.startswith(("financials.", "financials_consolidated.")):
         if kind == "changed" and old and new and old.reporting_period != new.reporting_period:
             return "new_filing"

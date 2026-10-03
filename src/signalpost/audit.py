@@ -63,9 +63,11 @@ def audit_envelope(env: dict[str, Any], universe_name: str | None = None,
     if site_ok:
         home = registered_domain(str(site.get("value")))
         for c in facts:
-            dom = registered_domain(first_ev(c).get("source_url", ""))
-            if dom and home and dom != home:
-                flag("web_source_domain_mismatch", f"{c['field']} from {dom}, official site is {home}")
+            for eid in c.get("evidence_ids") or []:  # list claims (jobs, news) carry one evidence per item
+                dom = registered_domain((ev.get(eid) or {}).get("source_url", ""))
+                if dom and home and dom != home:
+                    flag("web_source_domain_mismatch", f"{c['field']} from {dom}, official site is {home}")
+                    break
     for c in claims:
         e = first_ev(c)
         url = e.get("source_url", "")

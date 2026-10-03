@@ -116,7 +116,7 @@ class WebFetcher:
         self._robots[host] = rp
         return rp.can_fetch(UA_TOKEN, url), used
 
-    def page(self, url: str, org: str, *, home_domain: str | None = None) -> Page:
+    def page(self, url: str, org: str, *, home_domain: str | None = None, accept_xml: bool = False) -> Page:
         resp, final, used, err = self._get(url, org)
         pg = Page(url=url, final_url=final, requests=used, retrieved_at=utc_now())
         if resp is None:
@@ -127,7 +127,7 @@ class WebFetcher:
         ctype = resp.headers.get("content-type", "").lower()
         if resp.status_code != 200:
             pg.error = f"HTTP {resp.status_code}"
-        elif "html" not in ctype:
+        elif "html" not in ctype and not (accept_xml and any(k in ctype for k in ("xml", "rss", "atom"))):
             pg.error, pg.status = f"unsupported content-type {ctype[:40]}", 415
         else:
             raw = resp.content[:MAX_BYTES]

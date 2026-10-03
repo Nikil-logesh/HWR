@@ -85,7 +85,8 @@ def build_report(envs: list[Envelope], *, run_id: str, started_at: str, wall_s: 
         return xs[min(len(xs) - 1, max(0, int(q * len(xs) + 0.999999) - 1))] if xs else None
     key = ["legal_name", "status", "nace", "registered_address", "employees", "roles", "financials.revenue",
            "financials.total_assets", "workplaces", "registry_website", "official_website", "website_description",
-           "contact_email_1", "contact_phone_1", "social_linkedin", "social_facebook"]
+           "contact_email_1", "contact_phone_1", "social_linkedin", "social_facebook", "careers_page", "open_positions",
+           "hiring_status", "public_activity", "latest_activity_date"]
     facts = sum(1 for e in envs for c in e.claims if c.availability == "available")
     return {
         "run_id": run_id, "started_at": started_at, "completed_at": utc_now(),

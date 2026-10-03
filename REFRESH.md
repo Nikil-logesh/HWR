@@ -9,6 +9,9 @@ dates instead of adding a duplicate. `apply_refresh(previous, fresh, now)` (pure
   `material`, `detected_at`, `previous_run_id`, old/new reporting periods and, for lists, `detail.added/removed`
 * material: status, legal name, registered address, legal form, official website, roles, deleted registry record,
   new filing / restated figures
+* jobs and news are volatile: even when the homepage hash is unchanged, the careers and news/feed pages are re-fetched
+  on every run (only the static web facts and the LLM call are skipped); changes are typed `new_job_posting`,
+  `closed_job`, `job_postings_changed`, `new_activity`, `hiring_status_change`, `careers_page_change` (not material)
 * change types: status_change, name_change, address_change, legal_form_change, role_change, website_change,
   new_filing, financials_restated, registry_record_change, workplace_change, employees_change, field_added/removed
 * a failed or blocked source never erases a supported value: it is carried forward (`carried_forward=true`, note,

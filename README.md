@@ -63,10 +63,13 @@ Details: `DATA_SCHEMA.md`.
    bulk CSV or API; roles and registered workplaces from one bulk snapshot each (or per-company calls for small batches);
    financial values **only** from the Regnskapsregisteret JSON numbers, with reporting period. Missing is omitted, a real
    0 is kept.
-2. **Website layer, fail-closed.** Only the website listed in the register is visited (robots.txt honoured, ≤4 requests,
+2. **Website layer, fail-closed.** Only the website listed in the register is visited (robots.txt honoured, ≤7 requests,
    throttled). A page is accepted only if code finds the organisation number, or the legal name plus street address /
    postcode+city / registered phone. A different organisation number on the page vetoes it. Below 0.90 identity score
    nothing from the web is published (`ambiguous`). ~89% of companies list no website: that path costs zero requests.
+   On a verified site the agent also looks for **hiring** (careers page: job postings, "no open positions", external
+   portal link) and **dated activity** (RSS feed / news page), conservatively and with per-item evidence; a site that
+   names other organisation numbers is treated as a possible group site and yields nothing.
 3. **Literal-snippet verifier.** A web fact is kept only if its evidence snippet occurs in the fetched page and contains
    the value. LLM output that fails this is dropped.
 4. **Refresh.** Snapshots are stored (identical reruns add no duplicate rows); diffs produce typed, material-flagged changes.
@@ -92,11 +95,11 @@ The limits are our own safety defaults; the official budgets are not published.
 
 ## Limitations (important)
 The web layer has not been run against real websites, the LLM benchmark used a proxy corpus (see BENCHMARK.md), and
-hiring / dated public activity are not collected. See **LIMITATIONS.md** for the full list, source rights, secrets and URL-safety declarations.
+hiring / dated-activity extraction (new) has never run on a real website. See **LIMITATIONS.md** for the full list, source rights, secrets and URL-safety declarations.
 
 ## Repository map
 `run_agent.py` entry point · `src/signalpost/` (`pipeline`, `register`, `accounts`, `bulk`, `planner`, `refresh`,
-`store`, `explain`, `audit`, `htmlreport`, `web/` identity·fetch·verify·llm) · `scripts/` (benchmarks, audit, fixture
+`store`, `explain`, `audit`, `htmlreport`, `web/` identity·fetch·verify·llm·signals) · `scripts/` (benchmarks, audit, fixture
 recorder) · `tests/` (214 tests; real recorded Brreg fixtures + synthetic edge cases) · `samples/` (seeded samples) ·
 `kit/` (Builderr starter kit, untouched).
 Docs: `ARCHITECTURE.md`, `DATA_SCHEMA.md`, `IDENTITY_RESOLUTION.md`, `REFRESH.md`, `BUDGET.md`, `AUDIT.md`,

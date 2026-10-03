@@ -9,7 +9,8 @@ import re
 
 from .models import Claim, Envelope
 
-NOT_COLLECTED = "hiring and dated public activity were not collected by this agent version"
+NOT_COLLECTED = "hiring and dated public activity were not collected (they need a verified company website)"
+SITE_ONLY = "hiring and activity come only from the company's own site (no job boards, news search or social platforms)"
 
 
 def _money(v: dict) -> str:
@@ -76,6 +77,17 @@ def explain(env: Envelope, had_previous: bool = False) -> str:
         s3 += f" and describes the business as “{desc[:160].rstrip()}”." if desc else "."
         if site_phone and reg_phone and _digits(site_phone) != _digits(reg_phone):
             s3 += f" Conflict: the phone number on the site ({site_phone}) differs from the register ({reg_phone})."
+        jobs, act = val("open_positions"), val("public_activity")
+        if jobs:
+            s3 += f" Its careers page lists {len(jobs)} open position(s), e.g. \u201c{jobs[0]['title'][:70]}\u201d."
+        elif val("hiring_status") == "no_open_positions":
+            s3 += " Its careers page states there are no open positions."
+        elif "open_positions" in c:
+            s3 += f" No open positions were recognised ({c['open_positions'].note})."
+        if act:
+            s3 += f" Latest dated item on its site: \u201c{act[0]['title'][:70]}\u201d ({act[0]['date']})."
+        elif "public_activity" in c:
+            s3 += " No dated public activity was recognised on the site."
     elif web and web.availability == "ambiguous":
         s3 = f"The registered website was not used because its identity could not be confirmed ({web.note})."
     elif web and web.availability in ("blocked", "failed"):
@@ -97,5 +109,5 @@ def explain(env: Envelope, had_previous: bool = False) -> str:
     carried = [x.field for x in env.claims if x.carried_forward]
     if carried:
         s4 += f"{len(carried)} fact(s) were kept from an earlier run because their source failed this time; "
-    s4 += NOT_COLLECTED + "."
+    s4 += (SITE_ONLY if web and web.availability == "available" else NOT_COLLECTED) + "."
     return f"{s1} {s2} {s3} {s4}"

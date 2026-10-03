@@ -87,7 +87,7 @@ def test_correct_company_verified_by_org_number_and_publishes_facts():
     assert c["contact_email_1"].value == "post@nordvikbygg.example"
     assert c["contact_phone_1"].value == "70 12 34 56"
     assert c["social_facebook"].value == "https://www.facebook.com/nordvikbygg"
-    for cl in cs.claims:
+    for cl in (c for c in cs.claims if c.availability == "available"):
         ev = next(e for e in cs.evidence if e.id == cl.evidence_ids[0])
         assert ev.source_class == "company_owned_website" and ev.claim_span and ev.content_sha256
 

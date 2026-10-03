@@ -12,7 +12,7 @@ Override with `.env`: `REQUEST_BUDGET_TOTAL`, `REQUEST_BUDGET_PER_COMPANY`, `WAL
 | entity record | 1 | **free** from `--bulk` CSV (155 MB, supplied by the evaluator) |
 | roles | 1 | **1 request total**: `roller/totalbestand` (130 MB gz), filtered while streaming |
 | workplaces (subunits) | 1 | **1 request total**: `underenheter/lastned` (89 MB gz) |
-| website | robots + home + up to 2 pages (+1 LLM) | none; 0 requests when no site is listed (~89% of companies) |
+| website | robots + home + up to 2 about/contact pages + careers + feed/news (+1 LLM): planner estimate 7 | none; 0 requests when no site is listed (~89% of companies) |
 
 Bulk roles/subunits are used automatically from `BULK_THRESHOLD` (300) companies upward (`--bulk-register on|off`
 to force). They were verified on live data: 132 comparisons against per-company responses, 0 differences.

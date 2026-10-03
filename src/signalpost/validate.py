@@ -44,6 +44,15 @@ def validate_envelope(d: dict[str, Any]) -> list[str]:
             if f.startswith(WEB_SPAN_FIELDS) and str(c.get("value", "")).casefold() not in \
                     str(first.get("claim_span", "")).casefold():
                 bad.append(f"{f}: evidence snippet does not contain the value")
+            if f in ("open_positions", "public_activity"):
+                spans = " ".join((ev.get(i) or {}).get("claim_span", "") for i in c.get("evidence_ids") or []).casefold()
+                for item in c.get("value") or []:
+                    if str(item.get("title", "")).casefold() not in spans:
+                        bad.append(f"{f}: item {str(item.get('title'))[:40]!r} not supported by its evidence snippets")
+                    if f == "public_activity" and not item.get("date"):
+                        bad.append(f"{f}: item without a date")
+                if len(c.get("evidence_ids") or []) != len(c.get("value") or []):
+                    bad.append(f"{f}: needs one evidence record per item")
         elif c.get("value") is not None:
             bad.append(f"{f}: unavailable claim carries a value")
     return [f"{org}: {b}" for b in bad]

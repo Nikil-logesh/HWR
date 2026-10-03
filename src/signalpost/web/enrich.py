@@ -1,6 +1,7 @@
 """Website enrichment for one company. Fails closed: low identity => no web facts at all."""
 from __future__ import annotations
 
+import datetime as dt
 import urllib.parse
 from dataclasses import dataclass, field
 
@@ -11,6 +12,7 @@ from .fetch import Page, WebFetcher, registered_domain
 from .identity import CompanyIdentity, IdentityResult, assess
 from .llm import LlmClient
 from .safe import normalize_homepage
+from .signals_run import collect_and_publish
 from .text import PageText, lit, parse_page
 from .verify import verify
 
@@ -47,13 +49,18 @@ def _secondary_urls(home: Page, pt: PageText) -> list[str]:
     return [u for u, _ in sorted(ranked.items(), key=lambda kv: (kv[1], kv[0]))][:MAX_SECONDARY]
 
 
+def _today() -> dt.date:
+    return dt.datetime.now(dt.UTC).date()
+
+
 WEB_FIELDS = ("official_website", "website_description", "contact_email", "contact_phone", "social_",
               "products_services")
 
 
 def enrich_website(cs: ClaimSet, ident: CompanyIdentity, registry_website: str | None, fetcher: WebFetcher,
                    llm: LlmClient | None = None, *, prior_sha: str | None = None,
-                   previous: Envelope | None = None, capture: list[PageText] | None = None) -> WebOutcome:
+                   previous: Envelope | None = None, capture: list[PageText] | None = None,
+                   today: dt.date | None = None) -> WebOutcome:
     url = normalize_homepage(registry_website)
     if not url:  # normal, fast path: zero requests
         cs.unavailable("official_website", "not_available", note="no website listed in the official register; "
@@ -87,6 +94,10 @@ def enrich_website(cs: ClaimSet, ident: CompanyIdentity, registry_website: str |
             # source unchanged since the last verified run: reuse its verified claims, skip secondary pages + LLM
             cs.claims.extend(cs.carry(c, previous) for c in prior)
             out.state, out.skipped_unchanged = "verified", True
+            site = next(c for c in prior if c.field == "official_website")
+            # jobs and news change far more often than the homepage: always re-collect them
+            collect_and_publish(cs, ident, home, [(home, parse_page(home.final_url, home.html))], fetcher, out,
+                                site.confidence, today or _today(), homepage_only=allowed is None)
             return out
     pages: list[tuple[Page, PageText]] = [(home, parse_page(home.final_url, home.html))]
     if allowed is not None:  # unreachable robots.txt => homepage only
@@ -153,4 +164,6 @@ def enrich_website(cs: ClaimSet, ident: CompanyIdentity, registry_website: str |
                      source_url=pg.final_url, source_class=SRC, retrieved_at=pg.retrieved_at, sha256=pg.sha256,
                      span=" | ".join(c.snippet for c, _ in svc)[:1500], method="llm")
         out.published += 1
+    collect_and_publish(cs, ident, home, pages, fetcher, out, res.score, today or _today(),
+                        homepage_only=allowed is None)
     return out
