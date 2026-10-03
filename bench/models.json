@@ -1,0 +1,17 @@
+{
+  "_note": "Candidate models for the text-extraction step. Keys come from environment variables (never stored). extra_body switches that turn reasoning off are UNVERIFIED guesses per model: an HTTP 400 in the results means adjust them. NVIDIA build prices are declared as 0 (free tier); verify before relying on that. Model IDs for the four NVIDIA candidates were confirmed against https://integrate.api.nvidia.com/v1/models on 2026-10-03.",
+  "models": [
+    {"name": "deepseek-v4.1-flash", "base_url": "https://integrate.api.nvidia.com/v1", "model": "deepseek-ai/deepseek-v4.1-flash",
+     "key_env": "NVIDIA_API_KEY", "extra_body": {"chat_template_kwargs": {"thinking": false}}, "max_tokens": 1000},
+    {"name": "gemma-4-31b-it", "base_url": "https://integrate.api.nvidia.com/v1", "model": "google/gemma-4-31b-it",
+     "key_env": "NVIDIA_API_KEY", "extra_body": {}, "max_tokens": 1000},
+    {"name": "gpt-oss-20b", "base_url": "https://integrate.api.nvidia.com/v1", "model": "openai/gpt-oss-20b",
+     "key_env": "NVIDIA_API_KEY", "extra_body": {"reasoning_effort": "low"}, "max_tokens": 1000},
+    {"name": "nemotron-3.5-lightning-30b-a3b", "base_url": "https://integrate.api.nvidia.com/v1",
+     "model": "nvidia/nemotron-3.5-lightning-30b-a3b", "key_env": "NVIDIA_API_KEY",
+     "extra_body": {"chat_template_kwargs": {"enable_thinking": false}}, "max_tokens": 1000},
+    {"name": "gemini-flash-lite", "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+     "model_env": "GEMINI_FLASH_LITE_MODEL", "key_env": "GEMINI_API_KEY", "extra_body": {}, "max_tokens": 1000,
+     "price_in": 0.10, "price_out": 0.40}
+  ]
+}

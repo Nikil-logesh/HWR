@@ -13,4 +13,4 @@ universe JSONL) gives a free identity fallback; `--previous out_old/envelopes.js
 enables change detection; `--no-web`, `--no-llm`, `--workers N`, `--expected-count N`. Keys go in `.env`
 (see `.env.example`); without keys the agent runs deterministic extraction only.
 
-Status: Phases 1-6 done (see ARCHITECTURE.md, DATA_SCHEMA.md, IDENTITY_RESOLUTION.md, REFRESH.md). Full README in Phase 10.
+Status: Phases 1-8 done (8: harness only, benchmark not yet run, see BENCHMARK.md) (see ARCHITECTURE.md, DATA_SCHEMA.md, IDENTITY_RESOLUTION.md, REFRESH.md). Full README in Phase 10.

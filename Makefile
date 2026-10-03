@@ -1,4 +1,4 @@
-.PHONY: install test lint run smoke sample bench
+.PHONY: install test lint run smoke sample bench bench-models
 export PYTHONPATH := src:kit/src
 PY ?= uv run python
 
@@ -22,3 +22,9 @@ sample:
 # make bench -> 100-company daily-test benchmark (time, requests, cost vs limits); add RERUN=1 for refresh run
 bench:
 	$(PY) scripts/benchmark.py $(if $(RERUN),--rerun,)
+
+# LLM model benchmark (needs keys + network): make bench-models  -> BENCHMARK.md
+bench-models:
+	$(PY) scripts/model_benchmark.py corpus --count 30
+	$(PY) scripts/model_benchmark.py run
+	$(PY) scripts/model_benchmark.py report

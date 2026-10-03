@@ -53,7 +53,7 @@ WEB_FIELDS = ("official_website", "website_description", "contact_email", "conta
 
 def enrich_website(cs: ClaimSet, ident: CompanyIdentity, registry_website: str | None, fetcher: WebFetcher,
                    llm: LlmClient | None = None, *, prior_sha: str | None = None,
-                   previous: Envelope | None = None) -> WebOutcome:
+                   previous: Envelope | None = None, capture: list[PageText] | None = None) -> WebOutcome:
     url = normalize_homepage(registry_website)
     if not url:  # normal, fast path: zero requests
         cs.unavailable("official_website", "not_available", note="no website listed in the official register; "
@@ -114,6 +114,8 @@ def enrich_website(cs: ClaimSet, ident: CompanyIdentity, registry_website: str |
                  source_class=SRC, retrieved_at=holder[0].retrieved_at, sha256=holder[0].sha256,
                  span=res.snippet or ident.name, method="identity_gate:" + "+".join(res.signals))
     out.state = "verified"
+    if capture is not None:  # model benchmark: the identity-verified pages exactly as the LLM would see them
+        capture.extend(texts)
 
     by_url = {p.final_url: p for p, _ in pages}
     corpus = {t.url: t.corpus for t in texts}

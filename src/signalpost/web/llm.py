@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
 import time
 from dataclasses import dataclass, field
@@ -24,6 +25,41 @@ class Provider:
     api_key: str
     price_in: float = 0.0  # USD per 1M input tokens (declared; 0 for free endpoints)
     price_out: float = 0.0
+    json_mode: bool = True  # send response_format=json_object (some hosted models reject it: set False)
+    extra_body: dict = field(default_factory=dict)  # provider-specific switches, e.g. disable reasoning
+    max_tokens: int = 700
+
+
+@dataclass
+class LlmResult:
+    data: dict | None
+    strict_json: bool = False  # the reply was valid JSON as-is (no fence/think-tag/prose recovery needed)
+    provider: str = ""
+    latency_s: float = 0.0
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    attempts: int = 0
+    error: str | None = None
+
+
+def parse_json_content(text: str) -> tuple[dict | None, bool]:
+    """(object, strict). strict=True only if the whole reply parsed as a JSON object. Otherwise try to recover
+    from <think> blocks, ``` fences and surrounding prose; recovery is reported, never silently counted as valid."""
+    try:
+        obj = json.loads(text)
+        return (obj, True) if isinstance(obj, dict) else (None, False)
+    except (ValueError, TypeError):
+        pass
+    t = re.sub(r"<think>.*?</think>", "", text or "", flags=re.DOTALL)
+    t = re.sub(r"^```(?:json)?\s*|\s*```$", "", t.strip())
+    i, j = t.find("{"), t.rfind("}")
+    if i >= 0 and j > i:
+        try:
+            obj = json.loads(t[i: j + 1])
+            return (obj, False) if isinstance(obj, dict) else (None, False)
+        except ValueError:
+            return None, False
+    return None, False
 
 
 @dataclass
@@ -72,28 +108,35 @@ class LlmClient:
         with self._lock:
             self.usage.failures += 1
 
-    def complete_json(self, user: str, org: str) -> dict | None:
-        """Try providers in order; 429/5xx back off once then fall through. Returns parsed JSON or None."""
+    def complete(self, user: str, org: str) -> LlmResult:
+        """Try providers in order; 429/5xx back off once then fall through. Never raises."""
+        res = LlmResult(None)
         for p in self.providers:
             for attempt in range(2):
                 if not self.budget.take(org):
-                    return None
+                    res.error = "budget_exhausted"
+                    return res
                 self._local.n = self.thread_requests() + 1
                 with self._lock:
                     self.usage.requests += 1
                     self.usage.by_provider[p.name] = self.usage.by_provider.get(p.name, 0) + 1
+                res.attempts += 1
+                body = {"model": p.model, "temperature": 0, "max_tokens": p.max_tokens,
+                        "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}],
+                        **p.extra_body}
+                if p.json_mode:
+                    body["response_format"] = {"type": "json_object"}
+                t0 = time.monotonic()
                 try:
                     r = self._http.post(f"{p.base_url}/chat/completions",
-                                        headers={"Authorization": f"Bearer {p.api_key}"},
-                                        json={"model": p.model, "temperature": 0, "max_tokens": 700,
-                                              "response_format": {"type": "json_object"},
-                                              "messages": [{"role": "system", "content": SYSTEM},
-                                                           {"role": "user", "content": user}]})
-                except httpx.HTTPError:
+                                        headers={"Authorization": f"Bearer {p.api_key}"}, json=body)
+                except httpx.HTTPError as exc:
                     self._fail()
+                    res.error = type(exc).__name__
                     break
                 if r.status_code in (429, 500, 502, 503, 504):
                     self._fail()
+                    res.error = f"HTTP {r.status_code}"
                     if attempt == 0:
                         try:
                             self.sleeper(min(float(r.headers.get("retry-after", "")), 20.0))
@@ -103,17 +146,31 @@ class LlmClient:
                     break
                 if r.status_code != 200:
                     self._fail()
+                    res.error = f"HTTP {r.status_code}"
                     break
                 try:
-                    body = r.json()
-                    u = body.get("usage") or {}
+                    payload = r.json()
+                    u = payload.get("usage") or {}
                     pt, ct = int(u.get("prompt_tokens") or 0), int(u.get("completion_tokens") or 0)
-                    with self._lock:
-                        self.usage.prompt_tokens += pt
-                        self.usage.completion_tokens += ct
-                        self.usage.cost_usd += (pt * p.price_in + ct * p.price_out) / 1e6
-                    return json.loads(body["choices"][0]["message"]["content"])
+                    content = payload["choices"][0]["message"]["content"]
                 except (ValueError, KeyError, IndexError, TypeError):
                     self._fail()
+                    res.error = "malformed_response"
                     break
-        return None
+                with self._lock:
+                    self.usage.prompt_tokens += pt
+                    self.usage.completion_tokens += ct
+                    self.usage.cost_usd += (pt * p.price_in + ct * p.price_out) / 1e6
+                data, strict = parse_json_content(content)
+                res.provider, res.latency_s = p.name, time.monotonic() - t0
+                res.prompt_tokens, res.completion_tokens = pt, ct
+                if data is None:
+                    self._fail()
+                    res.error = "invalid_json"
+                    break  # next provider
+                res.data, res.strict_json, res.error = data, strict, None
+                return res
+        return res
+
+    def complete_json(self, user: str, org: str) -> dict | None:
+        return self.complete(user, org).data
