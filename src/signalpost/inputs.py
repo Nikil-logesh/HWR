@@ -59,6 +59,38 @@ def read_inputs(path: str | Path) -> list[InputRow]:
     return rows
 
 
+_BOOL = {"true": True, "false": False}
+_KEY_FIX = {"registrertIMvaRegisteret": "registrertIMvaregisteret",
+            "registreringsdatoenhetsregisteret": "registreringsdatoEnhetsregisteret"}
+_INTS = {"antallAnsatte"}
+
+
+def csv_row_to_entity(row: dict[str, str]) -> dict[str, Any]:
+    """Unflatten a Brreg bulk-CSV row (dotted columns) into the nested shape of /enheter/{org} JSON, so the
+    same claim extractor serves both. Empty cells are dropped; booleans/ints/decimals are typed."""
+    out: dict[str, Any] = {}
+    for key, raw in row.items():
+        if raw in (None, ""):
+            continue
+        key = _KEY_FIX.get(key, key)
+        val: Any = _BOOL.get(raw.lower(), raw)
+        if key in _INTS and raw.lstrip("-").isdigit():
+            val = int(raw)
+        elif key.endswith(".adresse"):  # CSV joins address lines with a newline; the JSON API gives a list
+            val = [ln.strip() for ln in raw.split("\n") if ln.strip()]
+        elif key == "kapital.belop":
+            try:
+                val = float(raw)
+            except ValueError:
+                pass
+        node = out
+        parts = key.split(".")
+        for part in parts[:-1]:
+            node = node.setdefault(part, {})
+        node[parts[-1]] = val
+    return out
+
+
 def load_registry_rows(path: str | Path | None, wanted: set[str]) -> dict[str, dict[str, Any]]:
     """Stream the universe JSONL(.gz) or the Brreg bulk CSV and keep only the wanted organisation numbers."""
     if not path or not Path(path).exists() or not wanted:
@@ -74,6 +106,7 @@ def load_registry_rows(path: str | Path | None, wanted: set[str]) -> dict[str, d
                 if org in wanted:
                     n = normalize_row(row)
                     n.pop("raw", None)
+                    n["_entity"] = csv_row_to_entity(row)  # full record: lets the entity module run at 0 requests
                     found[org] = n
                     if len(found) == len(wanted):
                         break

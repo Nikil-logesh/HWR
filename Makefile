@@ -1,4 +1,4 @@
-.PHONY: install test lint run smoke sample
+.PHONY: install test lint run smoke sample bench
 export PYTHONPATH := src:kit/src
 PY ?= uv run python
 
@@ -18,3 +18,7 @@ run:
 # make sample  -> samples/{submission,daily,dev}.jsonl (seeded, reproducible)
 sample:
 	$(PY) -m signalpost.sample --universe data/orgs.json --out samples
+
+# make bench -> 100-company daily-test benchmark (time, requests, cost vs limits); add RERUN=1 for refresh run
+bench:
+	$(PY) scripts/benchmark.py $(if $(RERUN),--rerun,)

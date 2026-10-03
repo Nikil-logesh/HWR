@@ -15,7 +15,7 @@ Authority order: RULES.md > kit/ > task prompt. `kit/` is untouched; `src/signal
 5. **Envelope:** kit `OUTPUT_CONTRACT.md` shape; availability states
    available / not_available / blocked / not_applicable / ambiguous / failed.
 
-## Controls
+## Controls (details in BUDGET.md)
 Global request budget, per-company budget, concurrency cap, wall-clock cutoff that writes a
 `failed`/budget envelope for every unprocessed company (exactly one envelope per input).
 

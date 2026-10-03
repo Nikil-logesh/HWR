@@ -33,9 +33,19 @@ def _canon(v: Any) -> str:
     return json.dumps(v, sort_keys=True, ensure_ascii=False)
 
 
-def _same(a: Claim, b: Claim) -> bool:
-    return a.availability == b.availability and _canon(a.value) == _canon(b.value) \
-        and (a.reporting_period or "") == (b.reporting_period or "")
+def _same(a: Claim, b: Claim, a_is_fallback: bool = False) -> bool:
+    if a.availability != b.availability or (a.reporting_period or "") != (b.reporting_period or ""):
+        return False
+    if _canon(a.value) == _canon(b.value):
+        return True
+    # a bulk/universe-row fallback claim carries fewer keys than the live record: compare only what it states
+    return bool(a_is_fallback and isinstance(a.value, dict) and isinstance(b.value, dict)
+                and all(b.value.get(k) == v for k, v in a.value.items()))
+
+
+def _is_fallback(env: Envelope, c: Claim) -> bool:
+    ev = _ev(env, c)
+    return bool(ev and ev.source_class == "official_registry_bulk")
 
 
 def _ev(env: Envelope, claim: Claim | None):
@@ -69,6 +79,9 @@ def apply_refresh(previous: Envelope | None, fresh: Envelope, now: str) -> Envel
     cs = ClaimSet()
     cs.evidence = list(fresh.evidence)  # carried claims append their evidence after the fresh evidence
     out_claims: list[Claim] = []
+    prev_classes = {e.source_class for e in previous.evidence} if previous else set()
+    prev_has_live = bool(previous and any(not _is_fallback(previous, c) and c.availability == "available"
+                                          and c.evidence_ids for c in previous.claims))
     errors = list(fresh.errors)
     changes: list[dict[str, Any]] = []
     seen = set()
@@ -77,6 +90,15 @@ def apply_refresh(previous: Envelope | None, fresh: Envelope, now: str) -> Envel
         seen.add(key)
         old = prev.get(key)
         old_ok = bool(old and old.availability == "available")
+        if (previous is not None and old is None and c.availability == "available" and prev_has_live
+                and _is_fallback(fresh, c)):
+            continue  # free universe-row duplicate of something the live register already covered
+        if (old_ok and previous is not None and old is not None and c.availability == "available"
+                and _is_fallback(fresh, c) and not _is_fallback(previous, old)):
+            # live register unavailable this time: the free universe-row value must not overwrite the live one
+            out_claims.append(cs.carry(old, previous, carried_forward=True,
+                                       note="live register unavailable this run; last live value retained"))
+            continue
         if c.availability in TRANSIENT and old_ok and previous is not None and old is not None:
             kept = cs.carry(old, previous, carried_forward=True,
                             note=f"refresh failed ({c.availability}: {c.note}); last supported value retained")
@@ -84,7 +106,7 @@ def apply_refresh(previous: Envelope | None, fresh: Envelope, now: str) -> Envel
             errors.append({"module": "refresh", "kind": "carried_forward", "field": c.field,
                            "reason": c.note or c.availability})
             continue
-        if old and _same(old, c):
+        if old and _same(old, c, previous is not None and _is_fallback(previous, old)):
             first = old.first_observed_at or (previous.run.started_at if previous else now)
             out_claims.append(c.model_copy(update={"first_observed_at": first, "last_checked_at": now}))
             continue
@@ -97,10 +119,14 @@ def apply_refresh(previous: Envelope | None, fresh: Envelope, now: str) -> Envel
             continue
         kind = ("changed" if old_ok else "added") if c.availability == "available" \
             else "removed" if old_ok else None
+        new_ev = _ev(fresh, c)
+        if kind == "added" and new_ev is not None and new_ev.source_class not in prev_classes:
+            continue  # the previous run never observed this source: a first observation, not a change
         if kind:
             changes.append(_change(previous, fresh, c.field, kind, old, c, now))
     for key, old in prev.items():  # supported earlier but absent from this run (e.g. module skipped for budget)
-        if key not in seen and old.availability == "available" and previous is not None:
+        if key not in seen and old.availability == "available" and previous is not None \
+                and not _is_fallback(previous, old):  # stale fallback-only facts are dropped, not carried forever
             out_claims.append(cs.carry(old, previous, carried_forward=True,
                                        note="not re-checked in this run; last supported value retained"))
     out_claims.sort(key=lambda c: (c.field, c.reporting_period or ""))

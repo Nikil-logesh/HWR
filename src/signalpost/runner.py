@@ -138,3 +138,70 @@ def read_previous(path: str | Path) -> dict[str, Envelope]:
             e = Envelope.model_validate(json.loads(ln))
             prev[e.organisation_number] = e
     return prev
+
+
+def run_planned_batch(inputs: list[InputRow], make: Callable[[InputRow, Any], Envelope],
+                      placeholder: Callable[[InputRow, str], Envelope], plan_fn: Callable[[list[InputRow]], dict],
+                      *, run_id: str, workers: int, out_path: Path, budget, chunk_size: int | None = None,
+                      progress: Callable[[int, int, float], None] | None = None,
+                      min_flush_s: float = 15.0) -> tuple[list[Envelope], dict[str, Any]]:
+    """Budget-aware batch: re-plans each chunk from the REAL remaining budget; after the deadline (or SIGTERM)
+    every unprocessed company gets a zero-network placeholder. out_path always holds one line per input."""
+    n = len(inputs)
+    results: dict[int, Envelope] = {}
+    t0 = time.monotonic()
+    chunk = chunk_size or max(24, workers * 3)
+    ph_lines: dict[int, str] = {}
+    last_flush = [0.0]
+    info: dict[str, Any] = {"chunks": 0, "cutoff_triggered": False, "placeholders_due_to_cutoff": 0, "plans": []}
+
+    def placeholder_line(i: int) -> str:
+        if i not in ph_lines:
+            row = inputs[i]
+            env = failed_envelope(row, run_id, f"invalid organisation number {row.raw!r}") if not row.valid \
+                else placeholder(row, "not processed before this checkpoint")
+            ph_lines[i] = env.to_json_line()
+        return ph_lines[i]
+
+    def flush(force: bool = False) -> None:
+        if not force and time.monotonic() - last_flush[0] < min_flush_s:
+            return
+        last_flush[0] = time.monotonic()
+        write_jsonl_atomic(out_path, [results[i].to_json_line() if i in results else placeholder_line(i)
+                                      for i in range(n)])
+
+    def do(i: int, plan: Any) -> None:
+        row, started = inputs[i], utc_now()
+        if not row.valid:
+            env = failed_envelope(row, run_id, f"invalid organisation number {row.raw!r} (needs 9 digits, mod-11)",
+                                  started=started)
+        else:
+            try:
+                env = make(row, plan)
+            except Exception as exc:  # noqa: BLE001 - a crash must still yield a terminal envelope
+                env = failed_envelope(row, run_id, f"{type(exc).__name__}: {str(exc)[:200]}", started=started)
+        results[i] = env
+        if progress:
+            progress(len(results), n, time.monotonic() - t0)
+
+    pending = list(range(n))
+    while pending:
+        if budget.expired:
+            info["cutoff_triggered"] = True
+            for i in pending:
+                row = inputs[i]
+                results[i] = failed_envelope(row, run_id, f"invalid organisation number {row.raw!r}") \
+                    if not row.valid else placeholder(row, "wall-clock cutoff / shutdown: not processed")
+                info["placeholders_due_to_cutoff"] += 1 if row.valid else 0
+            pending = []
+            break
+        batch, pending = pending[:chunk], pending[chunk:]
+        plans = plan_fn([inputs[i] for i in batch + pending])
+        info["chunks"] += 1
+        info["plans"].append({"remaining_companies": len(batch) + len(pending),
+                              "budget_left": budget.remaining_total})
+        with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
+            list(pool.map(lambda i, plans=plans: do(i, plans.get(inputs[i].org)), batch))
+        flush()
+    flush(force=True)
+    return [results[i] for i in range(n)], info

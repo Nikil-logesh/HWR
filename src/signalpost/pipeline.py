@@ -35,7 +35,8 @@ def _identity(org: str, cs: ClaimSet, row: dict[str, Any] | None) -> CompanyIden
 def register_envelope(org: str, client: ApiClient, *, run_id: str, universe_row: dict[str, Any] | None = None,
                       modules: tuple[str, ...] = DEFAULT_MODULES, fetcher: WebFetcher | None = None,
                       llm: LlmClient | None = None, store: SnapshotStore | None = None,
-                      previous: Envelope | None = None, now: str | None = None) -> Envelope:
+                      previous: Envelope | None = None, now: str | None = None,
+                      accounts_attempts: int | None = None, prefetched: dict[str, Fetched] | None = None) -> Envelope:
     """`previous` (e.g. from --previous) overrides the store's latest snapshot. With a store, the new state is saved."""
     started, t0 = utc_now(), time.monotonic()
     if previous is None and store is not None:
@@ -48,7 +49,10 @@ def register_envelope(org: str, client: ApiClient, *, run_id: str, universe_row:
         urls = {"financials": accounts.ACCOUNTS_URL, "entity": register.ENTITY_URL, "roles": register.ROLES_URL,
                 "subunits": register.SUBUNITS_URL, "history": accounts.YEARS_URL}
         for m in modules:
-            fetched[m] = client.get_json(urls[m].format(org=org), org)
+            if prefetched and m in prefetched:  # bulk snapshot: no per-company request
+                fetched[m] = prefetched[m]
+                continue
+            fetched[m] = client.get_json(urls[m].format(org=org), org, accounts_attempts if m == "financials" else None)
             requests += fetched[m].requests
             if fetched[m].status in (0, -1):
                 errors.append({"module": m, "error": fetched[m].error})
@@ -93,3 +97,21 @@ def register_envelope(org: str, client: ApiClient, *, run_id: str, universe_row:
     if store is not None and env.run.terminal_status != "failed":
         store.save(env)
     return env
+
+
+def placeholder_envelope(org: str, universe_row: dict[str, Any] | None, run_id: str, reason: str, *,
+                         previous: Envelope | None = None, now: str | None = None) -> Envelope:
+    """Terminal envelope built with ZERO network use (cutoff, shutdown, checkpoint): free register facts from the
+    universe row, or the last supported profile, plus an explicit error saying what was not done."""
+    started = utc_now()
+    cs = ClaimSet()
+    if universe_row:
+        register.universe_claims(cs, universe_row)
+    else:
+        cs.unavailable("registry_record", "failed", note=reason)
+    env = Envelope(organisation_number=org, run=Run(run_id=run_id, started_at=started, completed_at=utc_now(),
+                   terminal_status="partial" if universe_row else "failed"), claims=cs.sorted_claims(),
+                   evidence=cs.evidence, errors=[{"module": "runner", "error": reason}])
+    if previous is not None:
+        env = apply_refresh(previous, env, now or env.run.completed_at)
+    return env.model_copy(update={"explanation": explain(env, had_previous=previous is not None)})

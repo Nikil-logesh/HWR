@@ -2,19 +2,25 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
+import signal
 import sys
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 
 from .budget import Budget
+from .bulk import BulkUnavailable, bulk_roles, bulk_subunits
 from .config import Settings
-from .httpcache import ApiClient, utc_now
+from .httpcache import ApiClient, Fetched, utc_now
 from .inputs import load_registry_rows, read_inputs
-from .pipeline import DEFAULT_MODULES, register_envelope
-from .runner import build_report, read_previous, render_report, run_batch
+from .pipeline import DEFAULT_MODULES, placeholder_envelope, register_envelope
+from .planner import Company, Plan, plan_batch, summarize
+from .runner import build_report, read_previous, render_report, run_planned_batch
 from .store import SnapshotStore
+from .validate import validate_file
 from .web.fetch import WebFetcher
 from .web.llm import LlmClient, providers_from_env
 
@@ -44,12 +50,16 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--run-id", default=None)
     r.add_argument("--expected-count", type=int, default=None, help="fail (exit 2) if input count differs")
     r.add_argument("--workers", type=int, default=None)
-    r.add_argument("--modules", default=",".join(DEFAULT_MODULES))
+    r.add_argument("--modules", default=None, help="fixed module list (disables the budget planner)")
+    r.add_argument("--bulk-register", choices=["auto", "on", "off"], default="auto",
+                   help="roles/subunits from one bulk snapshot instead of 1 request per company "
+                        "(auto: from BULK_THRESHOLD companies upward)")
     r.add_argument("--no-web", action="store_true", help="register-only run")
     r.add_argument("--no-llm", action="store_true", help="deterministic web extraction only")
     r.add_argument("--quiet", action="store_true")
     a = ap.parse_args(argv)
 
+    t_start = time.monotonic()  # process start: the wall-clock limit covers loading and writing too
     load_dotenv()
     s = Settings.from_env()
     workers = a.workers or s.max_workers
@@ -63,36 +73,90 @@ def main(argv: list[str] | None = None) -> int:
     registry = a.registry or ("data/orgs.json" if Path("data/orgs.json").exists() else None)
     rows = load_registry_rows(registry, {i.org for i in inputs if i.valid})
     prev = read_previous(a.previous) if a.previous else {}
+    prefetched: dict[str, dict] = {}
+    snapshot_at = utc_now()
+    for org, row in rows.items():  # a bulk CSV carries the full entity record: entity module costs 0 requests
+        if row.get("_entity"):
+            body = row["_entity"]
+            prefetched.setdefault(org, {})["entity"] = Fetched(
+                f"https://data.brreg.no/enhetsregisteret/api/enheter/{org}", 200, body,
+                hashlib.sha256(json.dumps(body, sort_keys=True, ensure_ascii=False).encode()).hexdigest(),
+                snapshot_at, requests=0, via="bulk")
     store = SnapshotStore(a.store or out / "state.sqlite")
-    budget = Budget(s.request_budget_total, s.request_budget_per_company)
+    # hard stop = limit - safety margin (one network timeout + final write); SIGINT/SIGTERM trigger it immediately
+    budget = Budget(s.request_budget_total, s.request_budget_per_company,
+                    deadline=t_start + s.wall_clock_seconds - s.cutoff_margin_seconds)
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        signal.signal(sig, lambda *_: budget.expire())
     client = ApiClient(budget=budget)
     fetcher = None if a.no_web else WebFetcher(budget)
     providers = [] if (a.no_web or a.no_llm) else providers_from_env()
     llm = LlmClient(providers, budget) if providers else None
-    modules = tuple(m for m in a.modules.split(",") if m)
-    started_at, t0 = utc_now(), __import__("time").monotonic()
+    fixed = tuple(m for m in a.modules.split(",") if m) if a.modules else None
+    started_at = utc_now()
+    valid = {i.org for i in inputs if i.valid}
+    bulk_info: dict[str, object] = {"mode": a.bulk_register}
+    use_bulk = a.bulk_register == "on" or (a.bulk_register == "auto" and len(valid) >= s.bulk_threshold)
+    if use_bulk and valid and fixed is None:
+        from concurrent.futures import ThreadPoolExecutor
+        t_bulk = time.monotonic()
+        if not a.quiet:
+            print(f"bulk snapshots for {len(valid)} companies (roles + subunits, 2 requests total)...",
+                  file=sys.stderr, flush=True)
+        with ThreadPoolExecutor(2) as ex:
+            futs = {"roles": ex.submit(bulk_roles, valid, budget), "subunits": ex.submit(bulk_subunits, valid, budget)}
+            for module, fut in futs.items():
+                try:
+                    for org, fetched in fut.result().items():
+                        prefetched.setdefault(org, {})[module] = fetched
+                    bulk_info[module] = "ok"
+                except BulkUnavailable as exc:
+                    bulk_info[module] = f"unavailable ({exc}); falling back to per-company requests"
+        bulk_info["seconds"] = round(time.monotonic() - t_bulk, 1)
 
-    def make(row):
-        return register_envelope(row.org, client, run_id=run_id, universe_row=rows.get(row.org), modules=modules,
-                                 fetcher=fetcher, llm=llm, store=store, previous=prev.get(row.org))
+    def plan_fn(pending):
+        if fixed is not None:
+            return {i.org: Plan(modules=list(fixed), web=True) for i in pending}
+        cos = [Company(i.org, bool((rows.get(i.org) or {}).get("website")) and fetcher is not None,
+                       (rows.get(i.org) or {}).get("industry_code", ""), frozenset(prefetched.get(i.org, {})))
+               for i in pending]
+        return plan_batch(cos, budget.remaining_total, s.request_budget_per_company, llm=llm is not None)
+
+    def make(row, plan):
+        plan = plan or Plan(modules=list(DEFAULT_MODULES), web=True)
+        return register_envelope(row.org, client, run_id=run_id, universe_row=rows.get(row.org),
+                                 modules=tuple(plan.modules), fetcher=fetcher if plan.web else None, llm=llm,
+                                 store=store, previous=prev.get(row.org), accounts_attempts=plan.accounts_attempts,
+                                 prefetched=prefetched.get(row.org))
+
+    def placeholder(row, reason):
+        return placeholder_envelope(row.org, rows.get(row.org), run_id, reason, previous=prev.get(row.org) or
+                                    store.latest(row.org))
 
     def progress(done: int, total: int, elapsed: float) -> None:
         if not a.quiet and (done == total or done % max(1, total // 20) == 0):
             print(f"[{done:>{len(str(total))}}/{total}] {done / max(elapsed, 1e-9):5.1f} companies/s  "
                   f"elapsed {elapsed:6.1f}s  requests {budget.used}", file=sys.stderr, flush=True)
 
-    envs = run_batch(inputs, make, run_id=run_id, workers=workers, out_path=out / "envelopes.jsonl", progress=progress)
-    report = build_report(envs, run_id=run_id, started_at=started_at, wall_s=__import__("time").monotonic() - t0,
+    first_plan = summarize(plan_fn(inputs)) if fixed is None else {"fixed_modules": list(fixed)}  # before spending
+    envs, info = run_planned_batch(inputs, make, placeholder, plan_fn, run_id=run_id, workers=workers,
+                                   out_path=out / "envelopes.jsonl", budget=budget, progress=progress)
+    report = build_report(envs, run_id=run_id, started_at=started_at, wall_s=time.monotonic() - t_start,
                           budget_used=budget.used, expected=len(inputs), llm_usage=llm.usage if llm else None,
-                          settings={"workers": workers, "modules": list(modules), "web": not a.no_web,
+                          settings={"workers": workers, "web": not a.no_web,
                                     "llm_providers": [p.name for p in providers],
                                     "request_budget_total": s.request_budget_total,
-                                    "request_budget_per_company": s.request_budget_per_company})
+                                    "request_budget_per_company": s.request_budget_per_company,
+                                    "wall_clock_seconds": s.wall_clock_seconds,
+                                    "cutoff_margin_seconds": s.cutoff_margin_seconds})
+    report["control"] = {**{k: v for k, v in info.items() if k != "plans"}, "replans": len(info["plans"]), "bulk": bulk_info,
+                         "initial_plan_estimate": first_plan, "budget_exhausted": budget.used >= budget.total}
+    report["contract_validation"] = validate_file(out / "envelopes.jsonl", [i.org or i.raw for i in inputs])
     (out / "report.json").write_text(json.dumps(report, indent=1, ensure_ascii=False, sort_keys=True) + "\n",
                                      encoding="utf-8")
     print(render_report(report))
     print(f"wrote {out / 'envelopes.jsonl'} and {out / 'report.json'}")
-    return 0 if report["exactly_one_envelope_per_input"] else 2
+    return 0 if report["exactly_one_envelope_per_input"] and report["contract_validation"]["passed"] else 2
 
 
 if __name__ == "__main__":

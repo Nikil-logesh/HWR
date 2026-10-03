@@ -250,3 +250,36 @@ def test_kit_refresh_fixture_has_exactly_the_expected_changes_and_idempotent_rer
     assert all(c["source_url"] and c["detected_at"] == T2 and c["old_content_sha256"] for c in new.changes)
     again = register_envelope(org, client("new"), run_id="new2", store=store, now=T3, modules=mods)
     assert again.changes == [] and len(store.history(org)) == 2
+
+
+# ---------- fallback (universe-row) claims must not create false changes ----------
+ROW = {"name": "SYNTETISK TESTSELSKAP AS", "legal_form": "AS", "bankrupt": False, "liquidating": False,
+       "industry_code": "62.010", "industry_label": "Programmeringstjenester", "municipality": "OSLO",
+       "municipality_number": "0301", "employees": 12, "website": "www.syntetisk-test.example",
+       "latest_submitted_accounts": "2025"}
+
+
+def entity_down(fx):
+    return ApiClient(transport=httpx.MockTransport(
+        lambda r: httpx.Response(503) if "/enheter/" in r.url.path and not r.url.path.endswith("/roller")
+        else transport_for(fx).handle_request(r)), sleeper=lambda s: None)
+
+
+def test_live_to_fallback_run_keeps_live_values_and_makes_no_false_changes():
+    store, fx = SnapshotStore(), load(NAME)
+    refresh(fx, store, T1, "r1")  # live entity
+    env = register_envelope(fx["org"], entity_down(fx), run_id="r2", store=store, now=T2, universe_row=ROW)
+    c = by_field(env)
+    assert env.changes == []
+    assert c["legal_form"].value["description"] == "Aksjeselskap" and c["legal_form"].carried_forward
+    assert c["registered_address"].value["street"] == "Testveien 1"  # live-only fact retained
+
+
+def test_fallback_to_live_run_makes_no_false_changes():
+    store, fx = SnapshotStore(), load(NAME)
+    register_envelope(fx["org"], entity_down(fx), run_id="r1", store=store, now=T1, universe_row=ROW)
+    env = refresh(fx, store, T2, "r2")
+    assert env.changes == []  # facts the fallback run could not observe are first observations, not changes
+    assert by_field(env)["founded"].first_observed_at == T2
+    assert by_field(env)["legal_form"].value["description"] == "Aksjeselskap"
+    assert "municipality" not in by_field(env)  # stale fallback-only claim is dropped, not carried forever

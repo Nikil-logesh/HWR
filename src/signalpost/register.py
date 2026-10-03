@@ -81,7 +81,8 @@ def entity_claims(cs: ClaimSet, org: str, f: Fetched) -> bool:
         if value in (None, "", [], {}):
             return
         cs.available(field, value, confidence=CONF, source_url=url, source_class=LIVE,
-                     retrieved_at=f.retrieved_at, sha256=f.sha256, span=span, method="brreg_json_field", **kw)
+                     retrieved_at=f.retrieved_at, sha256=f.sha256, span=span,
+                     method="brreg_bulk_csv_field" if f.via == "bulk" else "brreg_json_field", **kw)
 
     put("legal_name", e.get("navn"), _span("navn", e.get("navn")))
     form = _g(e, "organisasjonsform", "kode")
@@ -193,7 +194,8 @@ def roles_claims(cs: ClaimSet, org: str, f: Fetched) -> None:
     roles.sort(key=lambda r: (r["role"], r["name"]))
     cs.available("roles", roles, confidence=CONF, source_url=url, source_class=ROLES,
                  retrieved_at=f.retrieved_at, sha256=f.sha256,
-                 span="; ".join(f"{r['role']}: {r['name']}" for r in roles)[:2000], method="brreg_roles_json")
+                 span="; ".join(f"{r['role']}: {r['name']}" for r in roles)[:2000],
+                 method="brreg_roles_bulk_snapshot" if f.via == "bulk" else "brreg_roles_json")
 
 
 def subunit_claims(cs: ClaimSet, org: str, f: Fetched) -> None:
@@ -216,4 +218,4 @@ def subunit_claims(cs: ClaimSet, org: str, f: Fetched) -> None:
     cs.available("workplaces", units, confidence=CONF, source_url=url, source_class=SUBUNITS,
                  retrieved_at=f.retrieved_at, sha256=f.sha256,
                  span="; ".join(f"{u.get('organisation_number')} {u.get('name')}" for u in units)[:2000],
-                 method="brreg_subunits_json")
+                 method="brreg_subunits_bulk_snapshot" if f.via == "bulk" else "brreg_subunits_json")

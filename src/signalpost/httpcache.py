@@ -36,6 +36,7 @@ class Fetched:
     error: str | None = None
     from_cache: bool = False
     requests: int = 0
+    via: str = "api"  # "api" per-company request, "bulk" bulk snapshot (0 requests)
 
     @property
     def ok(self) -> bool:
@@ -77,12 +78,12 @@ class ApiClient:
             self._db.execute("REPLACE INTO http_cache VALUES(?,?,?,?,?,?)", (url, etag, status, raw, sha, at))
             self._db.commit()
 
-    def get_json(self, url: str, org: str) -> Fetched:
+    def get_json(self, url: str, org: str, attempts: int | None = None) -> Fetched:
         cached = self._cached(url)
         headers = {"If-None-Match": cached[0]} if cached and cached[0] and cached[1] == 200 else {}
         used = 0
         error = "request failed"
-        for attempt in range(self.attempts):
+        for attempt in range(attempts or self.attempts):
             if not self.budget.take(org):
                 return Fetched(url, -1, error="budget_exhausted", retrieved_at=utc_now(), requests=used)
             used += 1
