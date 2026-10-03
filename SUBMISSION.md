@@ -71,3 +71,14 @@ Website requests (≤4 per website, throttled) were **not** exercised live; the 
 5. **Missing external families:** hiring and dated public activity are not collected (recall points on those are zero).
 6. **Revisions:** up to four more commit hashes may be submitted before 18 Oct 2026 (five versions total); each revision
    is frozen before its next official run.
+
+## Fresh-clone check (recorded 2026-10-03, verified at commit `11efc71`)
+Clean directory, `GIT_LFS_SKIP_SMUDGE=1 git clone --branch claude/hwr-repo-clone-8mv0g6 <repo>` (so `data/orgs.json` was only
+an LFS pointer), then only the documented steps:
+* `uv sync --frozen --python 3.12` — succeeded from `uv.lock` into the clone's own `.venv`.
+* `uv run pytest -q` — 213 passed, 1 skipped (the skipped test needs the LFS file).
+* `uv run python run_agent.py run --organisations ten.jsonl --out out1 --expected-count 10` (no `--bulk`) — 10/10 envelopes.
+* the same with `--bulk` pointing at the Brønnøysund download saved under the kit's `.csv` name (it is gzip) — 10/10
+  envelopes, contract validation passed, entity facts taken from the bulk file, 32 requests (3.2 per company).
+* `make run INPUT=… OUT=… BULK=…` — 10/10 envelopes. The clone stayed clean (`git status` empty).
+Documentation-only commits after `11efc71` do not change this result; re-run the check if code changes.
