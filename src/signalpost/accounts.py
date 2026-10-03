@@ -53,31 +53,45 @@ def accounts_claims(cs: ClaimSet, org: str, f: Fetched) -> None:
                        source_url=url, source_class=SRC, retrieved_at=f.retrieved_at, sha256=f.sha256)
         return
     emitted = 0
-    for rec in sorted(records, key=lambda r: ((r.get("regnskapsperiode") or {}).get("tilDato") or ""), reverse=True):
-        kind = str(rec.get("regnskapstype") or "SELSKAP").upper()
+    by_kind: dict[str, list[dict[str, Any]]] = {}
+    for rec in records:
+        if (rec.get("regnskapsperiode") or {}).get("tilDato"):  # a figure without a period is not publishable
+            by_kind.setdefault(str(rec.get("regnskapstype") or "SELSKAP").upper(), []).append(rec)
+    for kind, recs in sorted(by_kind.items()):
+        recs.sort(key=lambda r: r["regnskapsperiode"]["tilDato"], reverse=True)
         prefix = "financials_consolidated" if kind == "KONSERN" else "financials"
-        period = rec.get("regnskapsperiode") or {}
-        start, end = period.get("fraDato"), period.get("tilDato")
-        if not end:  # a figure without a reporting period is not publishable
-            continue
-        reporting = f"{start}/{end}" if start else f"/{end}"
-        currency = rec.get("valuta")
+        latest = recs[0]  # only the latest period: never mix periods under a "latest" field
+        reporting, end = _period(latest), latest["regnskapsperiode"]["tilDato"]
         for name, path in FIELDS.items():
-            raw = _dig(rec, path)
-            num = _number(raw)
+            num = _number(_dig(latest, path))
             if num is None:
                 continue
-            field = f"{prefix}.{name}"
-            if any(c.field == field for c in cs.claims):
-                continue  # only the latest period per field; history handled via filing years
-            cs.available(field, {"amount": num, "currency": currency}, confidence=CONF_ACC,
-                         source_url=url, source_class=SRC, retrieved_at=f.retrieved_at, sha256=f.sha256,
-                         span=f"{'.'.join(path)}={num}", method="regnskapsregisteret_json_number",
+            cs.available(f"{prefix}.{name}", {"amount": num, "currency": latest.get("valuta")},
+                         confidence=CONF_ACC, source_url=url, source_class=SRC, retrieved_at=f.retrieved_at,
+                         sha256=f.sha256, span=f"{'.'.join(path)}={num}", method="regnskapsregisteret_json_number",
                          reporting_period=reporting, as_of=end)
             emitted += 1
+        history = []
+        for rec in recs:  # same response, zero extra requests
+            row = {"reporting_period": _period(rec), "currency": rec.get("valuta")}
+            for name, path in FIELDS.items():
+                num = _number(_dig(rec, path))
+                if num is not None:
+                    row[name] = num
+            history.append(row)
+        if len(history) > 1:
+            cs.available(f"{prefix}_history", history, confidence=CONF_ACC, source_url=url, source_class=SRC,
+                         retrieved_at=f.retrieved_at, sha256=f.sha256,
+                         span="; ".join(f"{h['reporting_period']}" for h in history),
+                         method="regnskapsregisteret_json_number")
     if not emitted:
         cs.unavailable("financials", "not_available", note="accounts present but no numeric headline fields",
                        source_url=url, source_class=SRC, retrieved_at=f.retrieved_at, sha256=f.sha256)
+
+
+def _period(rec: dict[str, Any]) -> str:
+    p = rec["regnskapsperiode"]
+    return f"{p['fraDato']}/{p['tilDato']}" if p.get("fraDato") else f"/{p['tilDato']}"
 
 
 CONF_ACC = 0.99

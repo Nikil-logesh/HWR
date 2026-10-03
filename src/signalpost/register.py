@@ -119,6 +119,17 @@ def entity_claims(cs: ClaimSet, org: str, f: Fetched) -> bool:
     activity = " ".join(activity) if isinstance(activity, list) else activity
     put("registered_activity", activity, _span("aktivitet", e.get("aktivitet")))
     put("registry_website", e.get("hjemmeside"), _span("hjemmeside", e.get("hjemmeside")))
+    for key, field in (("telefon", "phone"), ("mobil", "mobile"), ("epostadresse", "email")):
+        put(field, e.get(key), _span(key, e.get(key)))
+    if isinstance(e.get("erIKonsern"), bool):
+        put("in_group", e["erIKonsern"], _span("erIKonsern", e["erIKonsern"]))
+    names = [{"name": h["navn"], "from": h.get("fraDato"), "to": h.get("tilDato")}
+             for h in e.get("historiskeNavn") or [] if isinstance(h, dict) and h.get("navn")]
+    put("previous_names", names, _span("historiskeNavn", [n["name"] for n in names]))
+    cap = e.get("kapital")
+    if isinstance(cap, dict) and isinstance(cap.get("belop"), (int, float)):
+        put("share_capital", {"amount": cap["belop"], "currency": cap.get("valuta"), "type": cap.get("type"),
+                              "registered": cap.get("innfortDato")}, _span("kapital.belop", cap["belop"]))
     return True
 
 

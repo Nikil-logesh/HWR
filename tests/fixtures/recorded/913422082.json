@@ -1,0 +1,898 @@
+{
+ "org": "913422082",
+ "responses": {
+  "accounts": {
+   "body": [
+    {
+     "avviklingsregnskap": false,
+     "egenkapitalGjeld": {
+      "egenkapital": {
+       "innskuttEgenkapital": {
+        "sumInnskuttEgenkaptial": 559142729.0
+       },
+       "opptjentEgenkapital": {
+        "sumOpptjentEgenkapital": -82677106.0
+       },
+       "sumEgenkapital": 476465623.0
+      },
+      "gjeldOversikt": {
+       "kortsiktigGjeld": {
+        "sumKortsiktigGjeld": 11886338.0
+       },
+       "langsiktigGjeld": {
+        "sumLangsiktigGjeld": 49379828.0
+       },
+       "sumGjeld": 61266166.0
+      },
+      "sumEgenkapitalGjeld": 537731789.0
+     },
+     "eiendeler": {
+      "anleggsmidler": {
+       "sumAnleggsmidler": 437718029.0
+      },
+      "omloepsmidler": {
+       "sumOmloepsmidler": 100013760.0
+      },
+      "sumBankinnskuddOgKontanter": 80276503.0,
+      "sumEiendeler": 537731789.0,
+      "sumFordringer": 18737257.0,
+      "sumInvesteringer": 1000000.0
+     },
+     "id": 5213989,
+     "journalnr": "2024585638",
+     "oppstillingsplan": "store",
+     "regnkapsprinsipper": {
+      "regnskapsregler": "IFRS",
+      "smaaForetak": false
+     },
+     "regnskapsperiode": {
+      "fraDato": "2023-01-01",
+      "tilDato": "2023-12-31"
+     },
+     "regnskapstype": "KONSERN",
+     "resultatregnskapResultat": {
+      "aarsresultat": -32603095.0,
+      "driftsresultat": {
+       "driftsinntekter": {},
+       "driftskostnad": {
+        "loennskostnad": 14899862.0,
+        "sumDriftskostnad": 34211084.0
+       },
+       "driftsresultat": -34211084.0
+      },
+      "finansresultat": {
+       "finansinntekt": {
+        "sumFinansinntekter": 3345813.0
+       },
+       "finanskostnad": {
+        "annenRentekostnad": 1374131.0,
+        "sumFinanskostnad": 1937773.0
+       },
+       "nettoFinans": 1408040.0
+      },
+      "ordinaertResultatFoerSkattekostnad": -32803044.0,
+      "skattekostnadEkstraordinaertResultat": -199949.0
+     },
+     "revisjon": {
+      "fravalgRevisjon": false,
+      "ikkeRevidertAarsregnskap": false
+     },
+     "valuta": "NOK",
+     "virksomhet": {
+      "morselskap": true,
+      "organisasjonsform": "ASA",
+      "organisasjonsnummer": "913422082"
+     }
+    },
+    {
+     "avviklingsregnskap": false,
+     "egenkapitalGjeld": {
+      "egenkapital": {
+       "innskuttEgenkapital": {
+        "sumInnskuttEgenkaptial": 971401585.0
+       },
+       "opptjentEgenkapital": {
+        "sumOpptjentEgenkapital": -150855249.0
+       },
+       "sumEgenkapital": 820546336.0
+      },
+      "gjeldOversikt": {
+       "kortsiktigGjeld": {
+        "sumKortsiktigGjeld": 56263607.0
+       },
+       "langsiktigGjeld": {
+        "sumLangsiktigGjeld": 165989417.0
+       },
+       "sumGjeld": 222253024.0
+      },
+      "sumEgenkapitalGjeld": 1042799360.0
+     },
+     "eiendeler": {
+      "anleggsmidler": {
+       "sumAnleggsmidler": 730457598.0
+      },
+      "omloepsmidler": {
+       "sumOmloepsmidler": 312341762.0
+      },
+      "sumBankinnskuddOgKontanter": 264857163.0,
+      "sumEiendeler": 1042799360.0,
+      "sumFordringer": 47484599.0
+     },
+     "id": 6300873,
+     "journalnr": "2025747333",
+     "oppstillingsplan": "store",
+     "regnkapsprinsipper": {
+      "regnskapsregler": "IFRS",
+      "smaaForetak": false
+     },
+     "regnskapsperiode": {
+      "fraDato": "2024-01-01",
+      "tilDato": "2024-12-31"
+     },
+     "regnskapstype": "KONSERN",
+     "resultatregnskapResultat": {
+      "aarsresultat": -68178145.0,
+      "driftsresultat": {
+       "driftsinntekter": {
+        "salgsinntekter": 109846.0,
+        "sumDriftsinntekter": 119846.0
+       },
+       "driftskostnad": {
+        "loennskostnad": 13888080.0,
+        "sumDriftskostnad": 66192841.0
+       },
+       "driftsresultat": -66072995.0
+      },
+      "finansresultat": {
+       "finansinntekt": {
+        "sumFinansinntekter": 8308760.0
+       },
+       "finanskostnad": {
+        "annenRentekostnad": 6483993.0,
+        "sumFinanskostnad": 10234978.0
+       },
+       "nettoFinans": -1926218.0
+      },
+      "ordinaertResultatFoerSkattekostnad": -67999213.0,
+      "ordinaertResultatSkattekostnad": 178932.0
+     },
+     "revisjon": {
+      "fravalgRevisjon": false,
+      "ikkeRevidertAarsregnskap": false
+     },
+     "valuta": "NOK",
+     "virksomhet": {
+      "morselskap": true,
+      "organisasjonsform": "ASA",
+      "organisasjonsnummer": "913422082"
+     }
+    },
+    {
+     "avviklingsregnskap": false,
+     "egenkapitalGjeld": {
+      "egenkapital": {
+       "innskuttEgenkapital": {
+        "sumInnskuttEgenkaptial": 1135077297.0
+       },
+       "opptjentEgenkapital": {
+        "sumOpptjentEgenkapital": -1021552221.0
+       },
+       "sumEgenkapital": 113525076.0
+      },
+      "gjeldOversikt": {
+       "kortsiktigGjeld": {
+        "sumKortsiktigGjeld": 101532520.0
+       },
+       "langsiktigGjeld": {
+        "sumLangsiktigGjeld": 341897418.0
+       },
+       "sumGjeld": 443429938.0
+      },
+      "sumEgenkapitalGjeld": 556955014.0
+     },
+     "eiendeler": {
+      "anleggsmidler": {
+       "sumAnleggsmidler": 330870338.0
+      },
+      "omloepsmidler": {
+       "sumOmloepsmidler": 226084677.0
+      },
+      "sumBankinnskuddOgKontanter": 152194707.0,
+      "sumEiendeler": 556955015.0,
+      "sumFordringer": 73889970.0
+     },
+     "id": 7191235,
+     "journalnr": "2026713505",
+     "oppstillingsplan": "store",
+     "regnkapsprinsipper": {
+      "regnskapsregler": "IFRS",
+      "smaaForetak": false
+     },
+     "regnskapsperiode": {
+      "fraDato": "2025-01-01",
+      "tilDato": "2025-12-31"
+     },
+     "regnskapstype": "KONSERN",
+     "resultatregnskapResultat": {
+      "aarsresultat": -870696971.0,
+      "driftsresultat": {
+       "driftsinntekter": {},
+       "driftskostnad": {
+        "loennskostnad": 29964073.0,
+        "sumDriftskostnad": 867246481.0
+       },
+       "driftsresultat": -867246481.0
+      },
+      "finansresultat": {
+       "finansinntekt": {
+        "sumFinansinntekter": 7190037.0
+       },
+       "finanskostnad": {
+        "annenRentekostnad": 9895235.0,
+        "sumFinanskostnad": 10819459.0
+       },
+       "nettoFinans": -3629422.0
+      },
+      "ordinaertResultatFoerSkattekostnad": -870875903.0,
+      "ordinaertResultatSkattekostnad": -178932.0
+     },
+     "revisjon": {
+      "fravalgRevisjon": false,
+      "ikkeRevidertAarsregnskap": false
+     },
+     "valuta": "NOK",
+     "virksomhet": {
+      "morselskap": true,
+      "organisasjonsform": "ASA",
+      "organisasjonsnummer": "913422082"
+     }
+    },
+    {
+     "avviklingsregnskap": false,
+     "egenkapitalGjeld": {
+      "egenkapital": {
+       "innskuttEgenkapital": {
+        "sumInnskuttEgenkaptial": 495839456.0
+       },
+       "opptjentEgenkapital": {},
+       "sumEgenkapital": 495839456.0
+      },
+      "gjeldOversikt": {
+       "kortsiktigGjeld": {
+        "sumKortsiktigGjeld": 11244733.0
+       },
+       "langsiktigGjeld": {
+        "sumLangsiktigGjeld": 28261255.0
+       },
+       "sumGjeld": 39505988.0
+      },
+      "sumEgenkapitalGjeld": 535345444.0
+     },
+     "eiendeler": {
+      "anleggsmidler": {
+       "sumAnleggsmidler": 388991676.0
+      },
+      "omloepsmidler": {
+       "sumOmloepsmidler": 146353768.0
+      },
+      "sumBankinnskuddOgKontanter": 20465067.0,
+      "sumEiendeler": 535345444.0,
+      "sumFordringer": 125888701.0
+     },
+     "id": 5213987,
+     "journalnr": "2024585638",
+     "oppstillingsplan": "store",
+     "regnkapsprinsipper": {
+      "regnskapsregler": "regnskapslovenAlminneligRegler",
+      "smaaForetak": false
+     },
+     "regnskapsperiode": {
+      "fraDato": "2023-01-01",
+      "tilDato": "2023-12-31"
+     },
+     "regnskapstype": "SELSKAP",
+     "resultatregnskapResultat": {
+      "aarsresultat": -25570072.0,
+      "driftsresultat": {
+       "driftsinntekter": {},
+       "driftskostnad": {
+        "loennskostnad": 14173498.0,
+        "sumDriftskostnad": 26167930.0
+       },
+       "driftsresultat": -26167930.0
+      },
+      "finansresultat": {
+       "finansinntekt": {
+        "sumFinansinntekter": 1787238.0
+       },
+       "finanskostnad": {
+        "annenRentekostnad": 1155003.0,
+        "sumFinanskostnad": 1189380.0
+       },
+       "nettoFinans": 597858.0
+      },
+      "ordinaertResultatFoerSkattekostnad": -25570072.0
+     },
+     "revisjon": {
+      "fravalgRevisjon": false,
+      "ikkeRevidertAarsregnskap": false
+     },
+     "valuta": "NOK",
+     "virksomhet": {
+      "morselskap": true,
+      "organisasjonsform": "ASA",
+      "organisasjonsnummer": "913422082"
+     }
+    },
+    {
+     "avviklingsregnskap": false,
+     "egenkapitalGjeld": {
+      "egenkapital": {
+       "innskuttEgenkapital": {
+        "sumInnskuttEgenkaptial": 868243417.0
+       },
+       "opptjentEgenkapital": {},
+       "sumEgenkapital": 868243417.0
+      },
+      "gjeldOversikt": {
+       "kortsiktigGjeld": {
+        "sumKortsiktigGjeld": 44577324.0
+       },
+       "langsiktigGjeld": {
+        "sumLangsiktigGjeld": 35628033.0
+       },
+       "sumGjeld": 80205357.0
+      },
+      "sumEgenkapitalGjeld": 948448774.0
+     },
+     "eiendeler": {
+      "anleggsmidler": {
+       "sumAnleggsmidler": 471216456.0
+      },
+      "omloepsmidler": {
+       "sumOmloepsmidler": 477232318.0
+      },
+      "sumBankinnskuddOgKontanter": 251468868.0,
+      "sumEiendeler": 948448774.0,
+      "sumFordringer": 225763450.0
+     },
+     "id": 6300871,
+     "journalnr": "2025747333",
+     "oppstillingsplan": "store",
+     "regnkapsprinsipper": {
+      "regnskapsregler": "regnskapslovenAlminneligRegler",
+      "smaaForetak": false
+     },
+     "regnskapsperiode": {
+      "fraDato": "2024-01-01",
+      "tilDato": "2024-12-31"
+     },
+     "regnskapstype": "SELSKAP",
+     "resultatregnskapResultat": {
+      "aarsresultat": -39854894.0,
+      "driftsresultat": {
+       "driftsinntekter": {
+        "sumDriftsinntekter": 164359.0
+       },
+       "driftskostnad": {
+        "loennskostnad": 11400391.0,
+        "sumDriftskostnad": 44594131.0
+       },
+       "driftsresultat": -44429772.0
+      },
+      "finansresultat": {
+       "finansinntekt": {
+        "sumFinansinntekter": 8024486.0
+       },
+       "finanskostnad": {
+        "annenRentekostnad": 1813504.0,
+        "sumFinanskostnad": 3449608.0
+       },
+       "nettoFinans": 4574878.0
+      },
+      "ordinaertResultatFoerSkattekostnad": -39854894.0,
+      "ordinaertResultatSkattekostnad": 0.0
+     },
+     "revisjon": {
+      "fravalgRevisjon": false,
+      "ikkeRevidertAarsregnskap": false
+     },
+     "valuta": "NOK",
+     "virksomhet": {
+      "morselskap": true,
+      "organisasjonsform": "ASA",
+      "organisasjonsnummer": "913422082"
+     }
+    },
+    {
+     "avviklingsregnskap": false,
+     "egenkapitalGjeld": {
+      "egenkapital": {
+       "innskuttEgenkapital": {
+        "sumInnskuttEgenkaptial": 100533284.0
+       },
+       "opptjentEgenkapital": {},
+       "sumEgenkapital": 100533284.0
+      },
+      "gjeldOversikt": {
+       "kortsiktigGjeld": {
+        "sumKortsiktigGjeld": 629156119.0
+       },
+       "langsiktigGjeld": {
+        "sumLangsiktigGjeld": 111161084.0
+       },
+       "sumGjeld": 740317203.0
+      },
+      "sumEgenkapitalGjeld": 840850487.0
+     },
+     "eiendeler": {
+      "anleggsmidler": {
+       "sumAnleggsmidler": 184436970.0
+      },
+      "omloepsmidler": {
+       "sumOmloepsmidler": 656413516.0
+      },
+      "sumBankinnskuddOgKontanter": 144234999.0,
+      "sumEiendeler": 840850486.0,
+      "sumFordringer": 512178517.0
+     },
+     "id": 7191233,
+     "journalnr": "2026713505",
+     "oppstillingsplan": "store",
+     "regnkapsprinsipper": {
+      "regnskapsregler": "regnskapslovenAlminneligRegler",
+      "smaaForetak": false
+     },
+     "regnskapsperiode": {
+      "fraDato": "2025-01-01",
+      "tilDato": "2025-12-31"
+     },
+     "regnskapstype": "SELSKAP",
+     "resultatregnskapResultat": {
+      "aarsresultat": -917069412.0,
+      "driftsresultat": {
+       "driftsinntekter": {
+        "sumDriftsinntekter": 2980.0
+       },
+       "driftskostnad": {
+        "loennskostnad": 23451170.0,
+        "sumDriftskostnad": 228286988.0
+       },
+       "driftsresultat": -228284008.0
+      },
+      "finansresultat": {
+       "finansinntekt": {
+        "sumFinansinntekter": 6626278.0
+       },
+       "finanskostnad": {
+        "annenRentekostnad": 1670181.0,
+        "sumFinanskostnad": 695411682.0
+       },
+       "nettoFinans": -688785404.0
+      },
+      "ordinaertResultatFoerSkattekostnad": -917069412.0
+     },
+     "revisjon": {
+      "fravalgRevisjon": false,
+      "ikkeRevidertAarsregnskap": false
+     },
+     "valuta": "NOK",
+     "virksomhet": {
+      "morselskap": true,
+      "organisasjonsform": "ASA",
+      "organisasjonsnummer": "913422082"
+     }
+    }
+   ],
+   "retrieved_at": "2026-10-03T04:01:25Z",
+   "status": 200,
+   "url": "https://data.brreg.no/regnskapsregisteret/regnskap/913422082"
+  },
+  "entity": {
+   "body": {
+    "_links": {
+     "self": {
+      "href": "https://data.brreg.no/enhetsregisteret/api/enheter/913422082"
+     }
+    },
+    "aktivitet": [
+     "Foredling av biomarine råvarer."
+    ],
+    "antallAnsatte": 13,
+    "epostadresse": "tt@alginor.no",
+    "erIKonsern": false,
+    "forretningsadresse": {
+     "adresse": [
+      "Husøyvegen 281"
+     ],
+     "kommune": "KARMØY",
+     "kommunenummer": "1149",
+     "land": "Norge",
+     "landkode": "NO",
+     "postnummer": "4262",
+     "poststed": "AVALDSNES"
+    },
+    "harRegistrertAntallAnsatte": true,
+    "historiskeNavn": [
+     {
+      "fraDato": "2014-03-27 14:49:19",
+      "navn": "ALGINOR AS",
+      "tilDato": "2016-01-19 15:16:59"
+     }
+    ],
+    "hjelpeenhetskode": {
+     "beskrivelse": "Hovedkontortjenester",
+     "kode": "70.100"
+    },
+    "hjemmeside": "www.alginor.no",
+    "institusjonellSektorkode": {
+     "beskrivelse": "Private aksjeselskaper mv.",
+     "kode": "2100"
+    },
+    "kapital": {
+     "antallAksjer": 34438004076,
+     "belop": 344380040.76,
+     "innfortDato": "2026-09-16",
+     "type": "Aksjekapital",
+     "valuta": "NOK"
+    },
+    "konkurs": false,
+    "maalform": "Bokmål",
+    "mobil": "905 63 750",
+    "naeringskode1": {
+     "beskrivelse": "Forskning og eksperimentell utvikling innenfor naturvitenskap og teknikk",
+     "kode": "72.100"
+    },
+    "navn": "ALGINOR ASA",
+    "organisasjonsform": {
+     "_links": {
+      "self": {
+       "href": "https://data.brreg.no/enhetsregisteret/api/organisasjonsformer/ASA"
+      }
+     },
+     "beskrivelse": "Allmennaksjeselskap",
+     "kode": "ASA"
+    },
+    "organisasjonsnummer": "913422082",
+    "paategninger": [],
+    "registreringsdatoAntallAnsatteEnhetsregisteret": "2026-09-14",
+    "registreringsdatoAntallAnsatteNAVAaregisteret": "2026-09-10",
+    "registreringsdatoEnhetsregisteret": "2014-03-27",
+    "registreringsdatoForetaksregisteret": "2014-03-27",
+    "registreringsdatoMerverdiavgiftsregisteret": "2014-07-01",
+    "registreringsdatoMerverdiavgiftsregisteretEnhetsregisteret": "2014-09-04",
+    "registrertIForetaksregisteret": true,
+    "registrertIFrivillighetsregisteret": false,
+    "registrertIMvaregisteret": true,
+    "registrertIPartiregisteret": false,
+    "registrertIStiftelsesregisteret": false,
+    "respons_klasse": "Enhet",
+    "sisteInnsendteAarsregnskap": "2025",
+    "stiftelsesdato": "2014-03-24",
+    "underAvvikling": false,
+    "underTvangsavviklingEllerTvangsopplosning": false,
+    "vedtektsdato": "2026-08-31",
+    "vedtektsfestetFormaal": [
+     "Bioraffinering og produksjon av ingredienser, formuleringer og",
+     "ferdigprodukter, fangst og høsting, handel, markedsføring og",
+     "distribusjon, innovasjon, forskning og utvikling relatert til",
+     "makroalger og andre biomarine råvarer ved egen drift og investering",
+     "eller gjennom samarbeid."
+    ]
+   },
+   "retrieved_at": "2026-10-03T04:01:24Z",
+   "status": 200,
+   "url": "https://data.brreg.no/enhetsregisteret/api/enheter/913422082"
+  },
+  "roles": {
+   "body": {
+    "_links": {
+     "enhet": {
+      "href": "https://data.brreg.no/enhetsregisteret/api/enheter/913422082"
+     },
+     "self": {
+      "href": "https://data.brreg.no/enhetsregisteret/api/enheter/913422082/roller"
+     }
+    },
+    "rollegrupper": [
+     {
+      "roller": [
+       {
+        "avregistrert": false,
+        "person": {
+         "navn": {
+          "etternavn": "Lea",
+          "fornavn": "Peer",
+          "mellomnavn": "Bjerkvig"
+         }
+        },
+        "rekkefolge": 0,
+        "type": {
+         "_links": {
+          "self": {
+           "href": "https://data.brreg.no/enhetsregisteret/api/roller/rolletyper/DAGL"
+          }
+         },
+         "beskrivelse": "Daglig leder",
+         "kode": "DAGL"
+        }
+       }
+      ],
+      "sistEndret": "2026-09-04",
+      "type": {
+       "_links": {
+        "self": {
+         "href": "https://data.brreg.no/enhetsregisteret/api/roller/rollegruppetyper/DAGL"
+        }
+       },
+       "beskrivelse": "Daglig leder",
+       "kode": "DAGL"
+      }
+     },
+     {
+      "roller": [
+       {
+        "avregistrert": false,
+        "person": {
+         "navn": {
+          "etternavn": "Kjølås",
+          "fornavn": "Wenche"
+         }
+        },
+        "rekkefolge": 0,
+        "type": {
+         "_links": {
+          "self": {
+           "href": "https://data.brreg.no/enhetsregisteret/api/roller/rolletyper/LEDE"
+          }
+         },
+         "beskrivelse": "Styrets leder",
+         "kode": "LEDE"
+        }
+       },
+       {
+        "avregistrert": false,
+        "person": {
+         "navn": {
+          "etternavn": "Klaveness",
+          "fornavn": "Kristine"
+         }
+        },
+        "rekkefolge": 1,
+        "type": {
+         "_links": {
+          "self": {
+           "href": "https://data.brreg.no/enhetsregisteret/api/roller/rolletyper/MEDL"
+          }
+         },
+         "beskrivelse": "Styremedlem",
+         "kode": "MEDL"
+        }
+       },
+       {
+        "avregistrert": false,
+        "person": {
+         "navn": {
+          "etternavn": "Sørlie",
+          "fornavn": "Per Arthur"
+         }
+        },
+        "rekkefolge": 2,
+        "type": {
+         "_links": {
+          "self": {
+           "href": "https://data.brreg.no/enhetsregisteret/api/roller/rolletyper/MEDL"
+          }
+         },
+         "beskrivelse": "Styremedlem",
+         "kode": "MEDL"
+        }
+       },
+       {
+        "avregistrert": false,
+        "person": {
+         "navn": {
+          "etternavn": "Stenersen",
+          "fornavn": "Sten"
+         }
+        },
+        "rekkefolge": 3,
+        "type": {
+         "_links": {
+          "self": {
+           "href": "https://data.brreg.no/enhetsregisteret/api/roller/rolletyper/MEDL"
+          }
+         },
+         "beskrivelse": "Styremedlem",
+         "kode": "MEDL"
+        }
+       },
+       {
+        "avregistrert": false,
+        "person": {
+         "navn": {
+          "etternavn": "Lersch",
+          "fornavn": "Martin"
+         }
+        },
+        "rekkefolge": 4,
+        "type": {
+         "_links": {
+          "self": {
+           "href": "https://data.brreg.no/enhetsregisteret/api/roller/rolletyper/MEDL"
+          }
+         },
+         "beskrivelse": "Styremedlem",
+         "kode": "MEDL"
+        }
+       }
+      ],
+      "sistEndret": "2026-07-23",
+      "type": {
+       "_links": {
+        "self": {
+         "href": "https://data.brreg.no/enhetsregisteret/api/roller/rollegruppetyper/STYR"
+        }
+       },
+       "beskrivelse": "Styre",
+       "kode": "STYR"
+      }
+     },
+     {
+      "roller": [
+       {
+        "avregistrert": false,
+        "enhet": {
+         "_links": {
+          "self": {
+           "href": "https://data.brreg.no/enhetsregisteret/api/enheter/935416779"
+          }
+         },
+         "erSlettet": false,
+         "godkjenningsstatus": "Godkjent revisjonsforetak",
+         "navn": [
+          "CEDRA NORGE AS"
+         ],
+         "organisasjonsform": {
+          "_links": {
+           "self": {
+            "href": "https://data.brreg.no/enhetsregisteret/api/organisasjonsformer/AS"
+           }
+          },
+          "beskrivelse": "Aksjeselskap",
+          "kode": "AS"
+         },
+         "organisasjonsnummer": "935416779"
+        },
+        "rekkefolge": 0,
+        "type": {
+         "_links": {
+          "self": {
+           "href": "https://data.brreg.no/enhetsregisteret/api/roller/rolletyper/REVI"
+          }
+         },
+         "beskrivelse": "Revisor",
+         "kode": "REVI"
+        }
+       }
+      ],
+      "sistEndret": "2026-05-02",
+      "type": {
+       "_links": {
+        "self": {
+         "href": "https://data.brreg.no/enhetsregisteret/api/roller/rollegruppetyper/REVI"
+        }
+       },
+       "beskrivelse": "Revisor",
+       "kode": "REVI"
+      }
+     }
+    ]
+   },
+   "retrieved_at": "2026-10-03T04:01:25Z",
+   "status": 200,
+   "url": "https://data.brreg.no/enhetsregisteret/api/enheter/913422082/roller"
+  },
+  "subunits": {
+   "body": {
+    "_embedded": {
+     "underenheter": [
+      {
+       "_links": {
+        "overordnetEnhet": {
+         "href": "https://data.brreg.no/enhetsregisteret/api/enheter/913422082"
+        },
+        "self": {
+         "href": "https://data.brreg.no/enhetsregisteret/api/underenheter/913469542"
+        }
+       },
+       "antallAnsatte": 13,
+       "beliggenhetsadresse": {
+        "adresse": [
+         "Husøyvegen 281"
+        ],
+        "kommune": "KARMØY",
+        "kommunenummer": "1149",
+        "land": "Norge",
+        "landkode": "NO",
+        "postnummer": "4262",
+        "poststed": "AVALDSNES"
+       },
+       "epostadresse": "tt@alginor.no",
+       "harRegistrertAntallAnsatte": true,
+       "historiskeNavn": [
+        {
+         "fraDato": "2014-04-05 14:40:11",
+         "navn": "ALGINOR AS",
+         "tilDato": "2016-01-19 15:16:58"
+        }
+       ],
+       "hjelpeenhetskode": {
+        "beskrivelse": "Hovedkontortjenester",
+        "kode": "70.100"
+       },
+       "hjemmeside": "www.alginor.no",
+       "mobil": "905 63 750",
+       "naeringskode1": {
+        "beskrivelse": "Forskning og eksperimentell utvikling innenfor naturvitenskap og teknikk",
+        "kode": "72.100"
+       },
+       "navn": "ALGINOR ASA",
+       "oppstartsdato": "2014-03-24",
+       "organisasjonsform": {
+        "_links": {
+         "self": {
+          "href": "https://data.brreg.no/enhetsregisteret/api/organisasjonsformer/BEDR"
+         }
+        },
+        "beskrivelse": "Underenhet til næringsdrivende og offentlig forvaltning",
+        "kode": "BEDR"
+       },
+       "organisasjonsnummer": "913469542",
+       "overordnetEnhet": "913422082",
+       "registreringsdatoAntallAnsatteEnhetsregisteret": "2026-09-12",
+       "registreringsdatoAntallAnsatteNAVAaregisteret": "2026-09-10",
+       "registreringsdatoEnhetsregisteret": "2014-04-05",
+       "registrertIMvaregisteret": false,
+       "respons_klasse": "Underenhet"
+      }
+     ]
+    },
+    "_links": {
+     "self": {
+      "href": "https://data.brreg.no/enhetsregisteret/api/underenheter?overordnetEnhet=913422082&size=100"
+     }
+    },
+    "page": {
+     "number": 0,
+     "size": 100,
+     "totalElements": 1,
+     "totalPages": 1
+    }
+   },
+   "retrieved_at": "2026-10-03T04:01:25Z",
+   "status": 200,
+   "url": "https://data.brreg.no/enhetsregisteret/api/underenheter?overordnetEnhet=913422082&size=100"
+  },
+  "years": {
+   "body": [
+    "2014",
+    "2015",
+    "2016",
+    "2017",
+    "2018",
+    "2019",
+    "2020",
+    "2021",
+    "2022",
+    "2023",
+    "2024",
+    "2025"
+   ],
+   "retrieved_at": "2026-10-03T04:01:26Z",
+   "status": 200,
+   "url": "https://data.brreg.no/regnskapsregisteret/regnskap/aarsregnskap/kopi/913422082/aar"
+  }
+ },
+ "synthetic": false
+}

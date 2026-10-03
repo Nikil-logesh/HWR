@@ -20,4 +20,4 @@ Global request budget, per-company budget, concurrency cap, wall-clock cutoff th
 `failed`/budget envelope for every unprocessed company (exactly one envelope per input).
 
 ## Known environment limit
-The build sandbox blocks data.brreg.no, builderr.ai and LLM hosts; live behaviour is tested via fixtures only.
+Live Brreg access verified 2026-10-03; entity endpoint sends no ETag (cache-control: no-store), so refresh uses content hashes.

@@ -18,6 +18,15 @@ from signalpost import accounts, register
 UA = "signalpost-agent/0.1 (fixture recorder)"
 
 
+def scrub(node):
+    """Drop personal data we never use (birth dates, death flags) before anything is written to disk."""
+    if isinstance(node, dict):
+        return {k: scrub(v) for k, v in node.items() if k not in {"fodselsdato", "erDoed"}}
+    if isinstance(node, list):
+        return [scrub(v) for v in node]
+    return node
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("orgs", nargs="+")
@@ -34,7 +43,7 @@ def main() -> None:
                 url = tpl.format(org=org)
                 r = http.get(url)
                 rec["responses"][name] = {"url": url, "status": r.status_code,
-                                          "body": r.json() if r.status_code == 200 else None,
+                                          "body": scrub(r.json()) if r.status_code == 200 else None,
                                           "retrieved_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
                 time.sleep(2.1 if name == "years" else 0.2)
             (out / f"{org}.json").write_text(json.dumps(rec, ensure_ascii=False, indent=1, sort_keys=True) + "\n")

@@ -15,4 +15,4 @@ registry_website, roles, workplaces, financials.{revenue,operating_result,profit
 total_assets,equity,total_debt} (+ financials_consolidated.*), financial_history_years, registry_record.
 Financial values come only from Regnskapsregisteret JSON numbers and carry reporting_period.
 
-Fixtures: tests/fixtures/synthetic are SYNTHETIC (invented orgs/values); scripts/record_fixtures.py records live ones.
+Fixtures: tests/fixtures/recorded = 12 REAL Brreg responses (2026-10-03, birth dates scrubbed); tests/fixtures/synthetic = invented edge cases (bankrupt, liquidating, 410) the active-only pool cannot supply.
