@@ -8,6 +8,8 @@ from . import accounts, register
 from .claims import ClaimSet
 from .httpcache import ApiClient, Fetched, utc_now
 from .models import Envelope, Operations, Run
+from .refresh import apply_refresh
+from .store import SnapshotStore
 from .web.enrich import enrich_website
 from .web.fetch import WebFetcher
 from .web.identity import CompanyIdentity
@@ -31,8 +33,12 @@ def _identity(org: str, cs: ClaimSet, row: dict[str, Any] | None) -> CompanyIden
 
 def register_envelope(org: str, client: ApiClient, *, run_id: str, universe_row: dict[str, Any] | None = None,
                       modules: tuple[str, ...] = DEFAULT_MODULES, fetcher: WebFetcher | None = None,
-                      llm: LlmClient | None = None) -> Envelope:
+                      llm: LlmClient | None = None, store: SnapshotStore | None = None,
+                      previous: Envelope | None = None, now: str | None = None) -> Envelope:
+    """`previous` (e.g. from --previous) overrides the store's latest snapshot. With a store, the new state is saved."""
     started, t0 = utc_now(), time.monotonic()
+    if previous is None and store is not None:
+        previous = store.latest(org)
     cs = ClaimSet()
     errors: list[dict[str, Any]] = []
     requests = 0
@@ -64,16 +70,24 @@ def register_envelope(org: str, client: ApiClient, *, run_id: str, universe_row:
             ident = _identity(org, cs, universe_row)
             if ident is not None:
                 llm_before = llm.usage.requests if llm else 0
-                web = enrich_website(cs, ident, website, fetcher, llm)
+                prior_sha = store.get_web_state(org)[0] if store else None
+                web = enrich_website(cs, ident, website, fetcher, llm, prior_sha=prior_sha, previous=previous)
+                if store and web.homepage_sha:
+                    store.set_web_state(org, web.homepage_sha, website)
                 requests += web.requests + ((llm.usage.requests - llm_before) if llm else 0)
                 # informational: facts the verifier refused to publish (not a run error)
                 errors.extend({"module": "web", "kind": "dropped_fact", **d} for d in web.dropped)
     except Exception as exc:  # noqa: BLE001 - one bad company must never drop its envelope
         errors.append({"module": "pipeline", "error": f"{type(exc).__name__}: {str(exc)[:200]}"})
         status = "failed"
-    return Envelope(
+    env = Envelope(
         organisation_number=org,
         run=Run(run_id=run_id, started_at=started, completed_at=utc_now(), terminal_status=status),
         claims=cs.sorted_claims(), evidence=cs.evidence, errors=errors,
         operations=Operations(requests=requests, runtime_ms=int((time.monotonic() - t0) * 1000)),
     )
+    if previous is not None or store is not None:
+        env = apply_refresh(previous, env, now or env.run.completed_at)
+        if store is not None and env.run.terminal_status != "failed":
+            store.save(env)
+    return env

@@ -36,6 +36,9 @@ class Claim(BaseModel):
     reporting_period: str | None = None
     as_of: str | None = None
     note: str | None = None
+    first_observed_at: str | None = None  # when this exact value was first seen (preserved across refreshes)
+    last_checked_at: str | None = None  # last run that re-checked it (refreshed even when unchanged)
+    carried_forward: bool = False  # refresh of this source failed; last supported value retained
 
     @model_validator(mode="after")
     def _rules(self) -> Claim:

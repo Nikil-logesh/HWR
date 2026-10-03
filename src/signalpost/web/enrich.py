@@ -5,6 +5,7 @@ import urllib.parse
 from dataclasses import dataclass, field
 
 from ..claims import ClaimSet
+from ..models import Envelope
 from .extract import deterministic_candidates, llm_candidates, llm_prompt
 from .fetch import Page, WebFetcher, registered_domain
 from .identity import CompanyIdentity, IdentityResult, assess
@@ -27,6 +28,8 @@ class WebOutcome:
     identity: IdentityResult | None = None
     dropped: list[dict] = field(default_factory=list)
     published: int = 0
+    homepage_sha: str | None = None
+    skipped_unchanged: bool = False
 
 
 def _secondary_urls(home: Page, pt: PageText) -> list[str]:
@@ -44,8 +47,13 @@ def _secondary_urls(home: Page, pt: PageText) -> list[str]:
     return [u for u, _ in sorted(ranked.items(), key=lambda kv: (kv[1], kv[0]))][:MAX_SECONDARY]
 
 
+WEB_FIELDS = ("official_website", "website_description", "contact_email", "contact_phone", "social_",
+              "products_services")
+
+
 def enrich_website(cs: ClaimSet, ident: CompanyIdentity, registry_website: str | None, fetcher: WebFetcher,
-                   llm: LlmClient | None = None) -> WebOutcome:
+                   llm: LlmClient | None = None, *, prior_sha: str | None = None,
+                   previous: Envelope | None = None) -> WebOutcome:
     url = normalize_homepage(registry_website)
     if not url:  # normal, fast path: zero requests
         cs.unavailable("official_website", "not_available", note="no website listed in the official register; "
@@ -72,6 +80,14 @@ def enrich_website(cs: ClaimSet, ident: CompanyIdentity, registry_website: str |
             cs.unavailable("official_website", "failed", note=f"website fetch failed: {home.error}")
         return out
 
+    out.homepage_sha = home.sha256
+    if prior_sha and prior_sha == home.sha256 and previous is not None:
+        prior = [c for c in previous.claims if c.field.startswith(WEB_FIELDS)]
+        if any(c.field == "official_website" and c.availability == "available" for c in prior):
+            # source unchanged since the last verified run: reuse its verified claims, skip secondary pages + LLM
+            cs.claims.extend(cs.carry(c, previous) for c in prior)
+            out.state, out.skipped_unchanged = "verified", True
+            return out
     pages: list[tuple[Page, PageText]] = [(home, parse_page(home.final_url, home.html))]
     if allowed is not None:  # unreachable robots.txt => homepage only
         for u in _secondary_urls(home, pages[0][1]):

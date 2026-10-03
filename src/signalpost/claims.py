@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .models import Availability, Claim, Evidence
+from .models import Availability, Claim, Envelope, Evidence
 
 
 class ClaimSet:
@@ -37,6 +37,19 @@ class ClaimSet:
         self.claims.append(Claim(field=field, value=None, availability=availability, confidence=1.0 if
                                  availability in ("not_available", "not_applicable") else 0.0,
                                  evidence_ids=ids, note=note))
+
+    def carry(self, claim: Claim, source: Envelope, *, carried_forward: bool = False, note: str | None = None) -> Claim:
+        """Copy a claim from an earlier envelope with its evidence re-added here (ids remapped).
+        Returns the new claim; the caller decides whether to append it to `claims`."""
+        old = {e.id: e for e in source.evidence}
+        ids = []
+        for eid in claim.evidence_ids:
+            e = old[eid]
+            ids.append(self.add_evidence(source_url=e.source_url, source_class=e.source_class,
+                                         retrieved_at=e.retrieved_at, sha256=e.content_sha256, span=e.claim_span,
+                                         method=e.extraction_method or "carried"))
+        return claim.model_copy(update={"evidence_ids": ids, "carried_forward": carried_forward,
+                                        "note": note or claim.note})
 
     def sorted_claims(self) -> list[Claim]:
         return sorted(self.claims, key=lambda c: (c.field, c.reporting_period or ""))
