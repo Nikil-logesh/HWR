@@ -1,0 +1,71 @@
+{
+ "accounts": [
+  {
+   "egenkapitalGjeld": {
+    "egenkapital": {
+     "sumEgenkapital": 5000000
+    },
+    "gjeldOversikt": {
+     "sumGjeld": 35000000
+    }
+   },
+   "eiendeler": {
+    "sumEiendeler": 40000000
+   },
+   "id": 1,
+   "regnskapsperiode": {
+    "fraDato": "2025-01-01",
+    "tilDato": "2025-12-31"
+   },
+   "regnskapstype": "SELSKAP",
+   "resultatregnskapResultat": {
+    "aarsresultat": 90000,
+    "driftsresultat": {
+     "driftsinntekter": {
+      "sumDriftsinntekter": 3200000
+     },
+     "driftsresultat": 150000
+    },
+    "ordinaertResultatFoerSkattekostnad": 90000
+   },
+   "valuta": "NOK"
+  }
+ ],
+ "entity": {
+  "forretningsadresse": {
+   "adresse": [
+    "Blokkveien 7"
+   ],
+   "kommune": "BÆRUM",
+   "kommunenummer": "3024",
+   "land": "Norge",
+   "landkode": "NO",
+   "postnummer": "1337",
+   "poststed": "SANDVIKA"
+  },
+  "konkurs": false,
+  "naeringskode1": {
+   "beskrivelse": "Boligbyggelag",
+   "kode": "98.000"
+  },
+  "navn": "SYNTETISK BORETTSLAG",
+  "organisasjonsform": {
+   "beskrivelse": "Boligbyggelag",
+   "kode": "BRL"
+  },
+  "organisasjonsnummer": "910000071",
+  "registreringsdatoEnhetsregisteret": "2015-03-02",
+  "registrertIMvaregisteret": true,
+  "underAvvikling": false,
+  "underTvangsavviklingEllerTvangsopplosning": false
+ },
+ "org": "910000071",
+ "roles": {
+  "rollegrupper": []
+ },
+ "subunits": {},
+ "synthetic": true,
+ "years": [
+  "2025"
+ ]
+}

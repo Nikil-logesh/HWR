@@ -1,0 +1,163 @@
+{
+ "accounts": [
+  {
+   "egenkapitalGjeld": {
+    "egenkapital": {
+     "sumEgenkapital": 2100000
+    },
+    "gjeldOversikt": {
+     "sumGjeld": 2900000
+    }
+   },
+   "eiendeler": {
+    "sumEiendeler": 5000000
+   },
+   "id": 1,
+   "regnskapsperiode": {
+    "fraDato": "2025-01-01",
+    "tilDato": "2025-12-31"
+   },
+   "regnskapstype": "SELSKAP",
+   "resultatregnskapResultat": {
+    "aarsresultat": 700000,
+    "driftsresultat": {
+     "driftsinntekter": {
+      "sumDriftsinntekter": 12500000
+     },
+     "driftsresultat": 900000
+    },
+    "ordinaertResultatFoerSkattekostnad": 850000
+   },
+   "valuta": "NOK"
+  }
+ ],
+ "entity": {
+  "antallAnsatte": 12,
+  "forretningsadresse": {
+   "adresse": [
+    "Testveien 1"
+   ],
+   "kommune": "OSLO",
+   "kommunenummer": "0301",
+   "land": "Norge",
+   "landkode": "NO",
+   "postnummer": "0150",
+   "poststed": "OSLO"
+  },
+  "hjemmeside": "www.syntetisk-test.example",
+  "konkurs": false,
+  "naeringskode1": {
+   "beskrivelse": "Programmeringstjenester",
+   "kode": "62.010"
+  },
+  "navn": "SYNTETISK TESTSELSKAP AS",
+  "organisasjonsform": {
+   "beskrivelse": "Aksjeselskap",
+   "kode": "AS"
+  },
+  "organisasjonsnummer": "910000012",
+  "registreringsdatoEnhetsregisteret": "2015-03-02",
+  "registrertIMvaregisteret": true,
+  "sisteInnsendteAarsregnskap": "2025",
+  "stiftelsesdato": "2015-02-20",
+  "underAvvikling": false,
+  "underTvangsavviklingEllerTvangsopplosning": false,
+  "vedtektsfestetFormaal": [
+   "Utvikling av programvare."
+  ]
+ },
+ "org": "910000012",
+ "roles": {
+  "rollegrupper": [
+   {
+    "roller": [
+     {
+      "avregistrert": false,
+      "person": {
+       "fodselsdato": "1970-01-01",
+       "navn": {
+        "etternavn": "Nordmann",
+        "fornavn": "Kari"
+       }
+      },
+      "type": {
+       "beskrivelse": "Styrets leder",
+       "kode": "LEDE"
+      }
+     },
+     {
+      "avregistrert": false,
+      "person": {
+       "fodselsdato": "1970-01-01",
+       "navn": {
+        "etternavn": "Hansen",
+        "fornavn": "Ola"
+       }
+      },
+      "type": {
+       "beskrivelse": "Styremedlem",
+       "kode": "MEDL"
+      }
+     }
+    ],
+    "sistEndret": "2024-05-01",
+    "type": {
+     "beskrivelse": "Styre",
+     "kode": "STYR"
+    }
+   },
+   {
+    "roller": [
+     {
+      "avregistrert": false,
+      "person": {
+       "fodselsdato": "1970-01-01",
+       "navn": {
+        "etternavn": "Nordmann",
+        "fornavn": "Kari"
+       }
+      },
+      "type": {
+       "beskrivelse": "Daglig leder",
+       "kode": "DAGL"
+      }
+     }
+    ],
+    "type": {
+     "beskrivelse": "Daglig leder",
+     "kode": "DAGL"
+    }
+   }
+  ]
+ },
+ "subunits": {
+  "_embedded": {
+   "underenheter": [
+    {
+     "antallAnsatte": 4,
+     "beliggenhetsadresse": {
+      "adresse": [
+       "Havnegata 2"
+      ],
+      "kommune": "BERGEN",
+      "kommunenummer": "4601",
+      "land": "Norge",
+      "landkode": "NO",
+      "postnummer": "5003",
+      "poststed": "BERGEN"
+     },
+     "naeringskode1": {
+      "kode": "62.010"
+     },
+     "navn": "SYNTETISK TEST AVD BERGEN",
+     "organisasjonsnummer": "911000016"
+    }
+   ]
+  }
+ },
+ "synthetic": true,
+ "years": [
+  "2024",
+  "2025"
+ ]
+}

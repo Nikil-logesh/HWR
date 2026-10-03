@@ -1,0 +1,39 @@
+{
+ "accounts": 404,
+ "entity": {
+  "antallAnsatte": 7,
+  "forretningsadresse": {
+   "adresse": [
+    "Kaia 5"
+   ],
+   "kommune": "OSLO",
+   "kommunenummer": "0301",
+   "land": "Norge",
+   "landkode": "NO",
+   "postnummer": "0250",
+   "poststed": "OSLO"
+  },
+  "konkurs": false,
+  "naeringskode1": {
+   "beskrivelse": "Uspesialisert engroshandel",
+   "kode": "46.900"
+  },
+  "navn": "SYNTETISK UTENLANDSK FILIAL",
+  "organisasjonsform": {
+   "beskrivelse": "Norskregistrert utenlandsk foretak",
+   "kode": "NUF"
+  },
+  "organisasjonsnummer": "910000055",
+  "registreringsdatoEnhetsregisteret": "2015-03-02",
+  "registrertIMvaregisteret": true,
+  "underAvvikling": false,
+  "underTvangsavviklingEllerTvangsopplosning": false
+ },
+ "org": "910000055",
+ "roles": {
+  "rollegrupper": []
+ },
+ "subunits": {},
+ "synthetic": true,
+ "years": 404
+}

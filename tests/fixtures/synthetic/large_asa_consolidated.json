@@ -1,0 +1,129 @@
+{
+ "accounts": [
+  {
+   "egenkapitalGjeld": {
+    "egenkapital": {
+     "sumEgenkapital": 6000000000
+    },
+    "gjeldOversikt": {
+     "sumGjeld": 6000000000
+    }
+   },
+   "eiendeler": {
+    "sumEiendeler": 12000000000
+   },
+   "id": 1,
+   "regnskapsperiode": {
+    "fraDato": "2025-01-01",
+    "tilDato": "2025-12-31"
+   },
+   "regnskapstype": "KONSERN",
+   "resultatregnskapResultat": {
+    "aarsresultat": 800000000,
+    "driftsresultat": {
+     "driftsinntekter": {
+      "sumDriftsinntekter": 9800000000
+     },
+     "driftsresultat": 1100000000
+    },
+    "ordinaertResultatFoerSkattekostnad": 1000000000
+   },
+   "valuta": "NOK"
+  },
+  {
+   "egenkapitalGjeld": {
+    "egenkapital": {
+     "sumEgenkapital": 500000000
+    },
+    "gjeldOversikt": {
+     "sumGjeld": 400000000
+    }
+   },
+   "eiendeler": {
+    "sumEiendeler": 900000000
+   },
+   "id": 1,
+   "regnskapsperiode": {
+    "fraDato": "2025-01-01",
+    "tilDato": "2025-12-31"
+   },
+   "regnskapstype": "SELSKAP",
+   "resultatregnskapResultat": {
+    "aarsresultat": 2900000,
+    "driftsresultat": {
+     "driftsinntekter": {
+      "sumDriftsinntekter": 12000000
+     },
+     "driftsresultat": 3000000
+    },
+    "ordinaertResultatFoerSkattekostnad": 2900000
+   },
+   "valuta": "NOK"
+  }
+ ],
+ "entity": {
+  "antallAnsatte": 5400,
+  "forretningsadresse": {
+   "adresse": [
+    "Konsernplassen 1"
+   ],
+   "kommune": "OSLO",
+   "kommunenummer": "0301",
+   "land": "Norge",
+   "landkode": "NO",
+   "postnummer": "0250",
+   "poststed": "OSLO"
+  },
+  "hjemmeside": "https://storkonsern.example",
+  "konkurs": false,
+  "naeringskode1": {
+   "beskrivelse": "Aktiviteter i holdingselskaper",
+   "kode": "64.200"
+  },
+  "navn": "SYNTETISK STORKONSERN ASA",
+  "organisasjonsform": {
+   "beskrivelse": "Allmennaksjeselskap",
+   "kode": "ASA"
+  },
+  "organisasjonsnummer": "910000063",
+  "registreringsdatoEnhetsregisteret": "2015-03-02",
+  "registrertIMvaregisteret": true,
+  "sisteInnsendteAarsregnskap": "2025",
+  "underAvvikling": false,
+  "underTvangsavviklingEllerTvangsopplosning": false
+ },
+ "org": "910000063",
+ "roles": {
+  "rollegrupper": [
+   {
+    "roller": [
+     {
+      "avregistrert": false,
+      "person": {
+       "fodselsdato": "1970-01-01",
+       "navn": {
+        "etternavn": "Berg",
+        "fornavn": "Eva"
+       }
+      },
+      "type": {
+       "beskrivelse": "Styrets leder",
+       "kode": "LEDE"
+      }
+     }
+    ],
+    "type": {
+     "beskrivelse": "Styre",
+     "kode": "STYR"
+    }
+   }
+  ]
+ },
+ "subunits": {},
+ "synthetic": true,
+ "years": [
+  "2023",
+  "2024",
+  "2025"
+ ]
+}

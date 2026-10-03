@@ -1,0 +1,39 @@
+{
+ "accounts": 404,
+ "entity": {
+  "forretningsadresse": {
+   "adresse": [
+    "Stiftelsesveien 9"
+   ],
+   "kommune": "ÅLESUND",
+   "kommunenummer": "1507",
+   "land": "Norge",
+   "landkode": "NO",
+   "postnummer": "6003",
+   "poststed": "ÅLESUND"
+  },
+  "harRegistrertAntallAnsatte": false,
+  "konkurs": false,
+  "naeringskode1": {
+   "beskrivelse": "Aktiviteter i andre interesseorganisasjoner",
+   "kode": "94.991"
+  },
+  "navn": "SYNTETISK STIFTELSE",
+  "organisasjonsform": {
+   "beskrivelse": "Stiftelse",
+   "kode": "STI"
+  },
+  "organisasjonsnummer": "910000098",
+  "registreringsdatoEnhetsregisteret": "2015-03-02",
+  "registrertIMvaregisteret": true,
+  "underAvvikling": false,
+  "underTvangsavviklingEllerTvangsopplosning": false
+ },
+ "org": "910000098",
+ "roles": {
+  "rollegrupper": []
+ },
+ "subunits": {},
+ "synthetic": true,
+ "years": 404
+}

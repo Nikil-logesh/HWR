@@ -1,0 +1,74 @@
+{
+ "accounts": [
+  {
+   "egenkapitalGjeld": {
+    "egenkapital": {
+     "sumEgenkapital": -40000
+    },
+    "gjeldOversikt": {
+     "sumGjeld": 120000
+    }
+   },
+   "eiendeler": {
+    "sumEiendeler": 80000
+   },
+   "id": 1,
+   "regnskapsperiode": {
+    "fraDato": "2025-01-01",
+    "tilDato": "2025-12-31"
+   },
+   "regnskapstype": "SELSKAP",
+   "resultatregnskapResultat": {
+    "aarsresultat": -150000,
+    "driftsresultat": {
+     "driftsinntekter": {
+      "sumDriftsinntekter": 0
+     },
+     "driftsresultat": -120000
+    },
+    "ordinaertResultatFoerSkattekostnad": -150000
+   },
+   "valuta": "NOK"
+  }
+ ],
+ "entity": {
+  "antallAnsatte": 3,
+  "forretningsadresse": {
+   "adresse": [
+    "Byggveien 9"
+   ],
+   "kommune": "DRAMMEN",
+   "kommunenummer": "3005",
+   "land": "Norge",
+   "landkode": "NO",
+   "postnummer": "3010",
+   "poststed": "DRAMMEN"
+  },
+  "konkurs": true,
+  "konkursdato": "2026-06-01",
+  "naeringskode1": {
+   "beskrivelse": "Oppføring av bygninger",
+   "kode": "41.200"
+  },
+  "navn": "SYNTETISK KONKURS AS",
+  "organisasjonsform": {
+   "beskrivelse": "Aksjeselskap",
+   "kode": "AS"
+  },
+  "organisasjonsnummer": "910000039",
+  "registreringsdatoEnhetsregisteret": "2015-03-02",
+  "registrertIMvaregisteret": true,
+  "sisteInnsendteAarsregnskap": "2025",
+  "underAvvikling": false,
+  "underTvangsavviklingEllerTvangsopplosning": false
+ },
+ "org": "910000039",
+ "roles": {
+  "rollegrupper": []
+ },
+ "subunits": {},
+ "synthetic": true,
+ "years": [
+  "2025"
+ ]
+}

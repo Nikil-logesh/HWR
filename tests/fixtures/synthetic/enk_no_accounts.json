@@ -1,0 +1,37 @@
+{
+ "accounts": 404,
+ "entity": {
+  "antallAnsatte": 0,
+  "forretningsadresse": {
+   "adresse": [
+    "Smauet 3"
+   ],
+   "kommune": "TRONDHEIM",
+   "kommunenummer": "5001",
+   "land": "Norge",
+   "landkode": "NO",
+   "postnummer": "7010",
+   "poststed": "TRONDHEIM"
+  },
+  "konkurs": false,
+  "naeringskode1": {
+   "beskrivelse": "Frisorvirksomhet",
+   "kode": "96.020"
+  },
+  "navn": "SYNTETISK ENKEL ENK",
+  "organisasjonsform": {
+   "beskrivelse": "Enkeltpersonforetak",
+   "kode": "ENK"
+  },
+  "organisasjonsnummer": "910000020",
+  "registreringsdatoEnhetsregisteret": "2015-03-02",
+  "registrertIMvaregisteret": true,
+  "underAvvikling": false,
+  "underTvangsavviklingEllerTvangsopplosning": false
+ },
+ "org": "910000020",
+ "roles": 404,
+ "subunits": {},
+ "synthetic": true,
+ "years": 404
+}

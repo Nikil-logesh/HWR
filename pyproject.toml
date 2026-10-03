@@ -27,4 +27,4 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 120
 src = ["src", "tests"]
-extend-exclude = ["kit"]
+extend-exclude = ["kit", "tests/fixtures"]
