@@ -264,3 +264,12 @@ def test_llm_provider_fallback_on_429_and_usage_tracking():
     assert llm.usage.by_provider == {"primary": 2, "fallback": 1} and llm.usage.prompt_tokens == 50
     assert abs(llm.usage.cost_usd - (50 * 0.1 + 5 * 0.4) / 1e6) < 1e-12 and len(calls) == 3
     assert LlmClient([], Budget(1, 1)).complete_json("x", ORG) is None
+
+
+def test_registered_domain_never_collapses_unknown_suffixes():
+    from signalpost.web.fetch import registered_domain
+    assert registered_domain("https://www.firma.no/x") == "firma.no"
+    assert registered_domain("https://shop.firma.co.uk/") == "firma.co.uk"
+    assert registered_domain("https://a.firma.example/") == "firma.example"
+    assert registered_domain("https://a.example/") != registered_domain("https://b.example/")
+    assert registered_domain("not a url") == ""

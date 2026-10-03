@@ -1,4 +1,4 @@
-.PHONY: install test lint run smoke sample bench bench-models
+.PHONY: install test lint run smoke sample bench bench-models batch audit
 export PYTHONPATH := src:kit/src
 PY ?= uv run python
 
@@ -28,3 +28,12 @@ bench-models:
 	$(PY) scripts/model_benchmark.py corpus --count 30
 	$(PY) scripts/model_benchmark.py run
 	$(PY) scripts/model_benchmark.py report
+
+# make batch BULK=brreg-enheter.csv.gz  -> 1,500 seeded profiles in out/profiles.jsonl (local scale test, not submitted)
+batch:
+	REQUEST_BUDGET_TOTAL=$${REQUEST_BUDGET_TOTAL:-6000} $(PY) run_agent.py run --organisations samples/submission.jsonl --out out/batch $(if $(BULK),--bulk "$(BULK)",) --bulk-register on --run-id batch
+	cp out/batch/envelopes.jsonl out/profiles.jsonl
+
+# make audit -> wrong-company audit of out/profiles.jsonl + 50-profile human review sheet (out/audit/)
+audit:
+	$(PY) scripts/audit_sample.py --profiles out/profiles.jsonl --out out/audit

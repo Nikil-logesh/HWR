@@ -25,7 +25,10 @@ _EXTRACT = tldextract.TLDExtract(suffix_list_urls=())  # offline: bundled snapsh
 
 
 def registered_domain(url: str) -> str:
-    return _EXTRACT(urllib.parse.urlparse(url).hostname or "").top_domain_under_public_suffix
+    """eTLD+1. For a suffix missing from the bundled list tldextract returns '' (which would make any two such
+    hosts compare equal), so fall back to the last two hostname labels."""
+    host = (urllib.parse.urlparse(url).hostname or "").lower().rstrip(".")
+    return _EXTRACT(host).top_domain_under_public_suffix or ".".join(host.split(".")[-2:])
 
 
 @dataclass
