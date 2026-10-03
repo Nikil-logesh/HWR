@@ -8,13 +8,30 @@ from . import accounts, register
 from .claims import ClaimSet
 from .httpcache import ApiClient, Fetched, utc_now
 from .models import Envelope, Operations, Run
+from .web.enrich import enrich_website
+from .web.fetch import WebFetcher
+from .web.identity import CompanyIdentity
+from .web.llm import LlmClient
 
 # Priority order under budget pressure: most valuable per request first.
 DEFAULT_MODULES = ("financials", "entity", "roles", "subunits", "history")
 
 
+def _identity(org: str, cs: ClaimSet, row: dict[str, Any] | None) -> CompanyIdentity | None:
+    """Identity anchor for the web gate, built only from official register claims (never from the web)."""
+    c = {x.field: x.value for x in cs.claims if x.availability == "available"}
+    name = c.get("legal_name") or (row or {}).get("name")
+    if not name:
+        return None
+    addr = c.get("registered_address") or {}
+    muni = (c.get("municipality") or {}).get("name") or addr.get("municipality") or (row or {}).get("municipality")
+    return CompanyIdentity(org=org, name=name, street=addr.get("street"), postcode=addr.get("postcode"),
+                           city=addr.get("city"), municipality=muni, phone=c.get("phone") or c.get("mobile"))
+
+
 def register_envelope(org: str, client: ApiClient, *, run_id: str, universe_row: dict[str, Any] | None = None,
-                      modules: tuple[str, ...] = DEFAULT_MODULES) -> Envelope:
+                      modules: tuple[str, ...] = DEFAULT_MODULES, fetcher: WebFetcher | None = None,
+                      llm: LlmClient | None = None) -> Envelope:
     started, t0 = utc_now(), time.monotonic()
     cs = ClaimSet()
     errors: list[dict[str, Any]] = []
@@ -42,6 +59,15 @@ def register_envelope(org: str, client: ApiClient, *, run_id: str, universe_row:
         if "history" in fetched:
             accounts.years_claims(cs, org, fetched["history"])
         status = "completed" if not errors else "partial"
+        if fetcher is not None:
+            website = next((x.value for x in cs.claims if x.field == "registry_website" and x.availability == "available"), None)
+            ident = _identity(org, cs, universe_row)
+            if ident is not None:
+                llm_before = llm.usage.requests if llm else 0
+                web = enrich_website(cs, ident, website, fetcher, llm)
+                requests += web.requests + ((llm.usage.requests - llm_before) if llm else 0)
+                # informational: facts the verifier refused to publish (not a run error)
+                errors.extend({"module": "web", "kind": "dropped_fact", **d} for d in web.dropped)
     except Exception as exc:  # noqa: BLE001 - one bad company must never drop its envelope
         errors.append({"module": "pipeline", "error": f"{type(exc).__name__}: {str(exc)[:200]}"})
         status = "failed"

@@ -1,0 +1,119 @@
+"""Identity gate: does this page belong to THIS legal entity? Computed in code, never by an LLM.
+
+Publish threshold 0.90. Signals (best applicable wins):
+  1.00  exact organisation number on the page
+  0.95  full legal name + exact street address (street + number)
+  0.92  full legal name + postcode and city together / registered phone number
+  0.70  legal name + municipality only  (review, NOT publishable)
+  0.50  legal name only                 (NOT publishable)
+Vetoes: a different valid organisation number given as the company's number; parked/for-sale pages.
+"""
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass, field
+
+from ..universe import valid_orgnr
+from .text import PageText, fold
+
+PUBLISH_THRESHOLD = 0.90
+LEGAL_FORMS = {"as", "asa", "ans", "da", "enk", "iks", "sa", "sam", "sti", "nuf", "ks", "brl", "bbl", "fli", "esek",
+               "spa", "stiftelsen", "stiftelse"}
+PARKED = ("domain is for sale", "domain for sale", "hugedomains", "this domain may be for sale",
+          "buy this domain", "domene til salgs", "parked domain", "sedo domain parking")
+ORG_NUM = re.compile(r"(?<!\d)(\d{3})[ . ]?(\d{3})[ . ]?(\d{3})(?!\d)")
+ORG_LABEL = re.compile(r"(org\.?\s?(nr|nummer|no)\b|organisasjonsnummer|organisation number|organization number|"
+                       r"foretaksregisteret|\bnorway\s*(reg|no)|\bNO\b)", re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class CompanyIdentity:
+    org: str
+    name: str
+    street: str | None = None
+    postcode: str | None = None
+    city: str | None = None
+    municipality: str | None = None
+    phone: str | None = None
+
+
+@dataclass
+class IdentityResult:
+    score: float
+    signals: list[str] = field(default_factory=list)
+    snippet: str | None = None  # literal text from the page that proves the identity signal
+    veto: str | None = None
+    foreign_org: str | None = None
+
+    @property
+    def publishable(self) -> bool:
+        return self.score >= PUBLISH_THRESHOLD and self.veto is None
+
+
+def core_tokens(name: str) -> list[str]:
+    return [t for t in fold(name).split() if t not in LEGAL_FORMS]
+
+
+def _context(text: str, start: int, end: int, pad: int = 60) -> str:
+    return text[max(0, start - pad): end + pad].replace("\n", " ").strip()
+
+
+def _find_literal(haystack: str, needle: str) -> tuple[int, int] | None:
+    """Case-insensitive literal location of `needle` in the original text (so the snippet is verbatim)."""
+    i = haystack.casefold().find(needle.casefold())
+    return (i, i + len(needle)) if i >= 0 else None
+
+
+def assess(ident: CompanyIdentity, pages: list[PageText]) -> IdentityResult:
+    text = "\n".join(p.corpus for p in pages)
+    folded = fold(text)
+    low = text.casefold()
+    if any(m in low for m in PARKED):
+        return IdentityResult(0.1, veto="parked or for-sale domain")
+
+    ours, foreign = None, None
+    for m in ORG_NUM.finditer(text):
+        digits = "".join(m.groups())
+        if not valid_orgnr(digits):
+            continue
+        if digits == ident.org:
+            ours = ours or m
+        elif ORG_LABEL.search(text[max(0, m.start() - 30): m.start()]):
+            foreign = foreign or digits
+    if ours:
+        return IdentityResult(1.0, ["organisation_number"], _context(text, ours.start(), ours.end()))
+    if foreign:
+        return IdentityResult(0.1, veto=f"page states a different organisation number ({foreign})", foreign_org=foreign)
+
+    core = " ".join(core_tokens(ident.name))
+    if not core or not re.search(rf"(?<![a-z0-9]){re.escape(core)}(?![a-z0-9])", folded):
+        return IdentityResult(0.0, [], veto="legal name not found on page")
+    signals = ["legal_name"]
+    name_loc = _find_literal(text, ident.name) or _find_literal(text, " ".join(ident.name.split()[:-1]) or ident.name)
+
+    def snippet_for(needle: str) -> str | None:
+        loc = _find_literal(text, needle)
+        return _context(text, *loc) if loc else None
+
+    if ident.street:
+        street = fold(ident.street)
+        if street and re.search(rf"(?<![a-z0-9]){re.escape(street)}(?![a-z0-9])", folded):
+            signals.append("street_address")
+            snip = snippet_for(ident.street) or (name_loc and _context(text, *name_loc))
+            return IdentityResult(0.95, signals, snip)
+    if ident.postcode and ident.city:
+        city = fold(ident.city)
+        if re.search(rf"(?<!\d){ident.postcode}\s+{re.escape(city)}(?![a-z0-9])", folded):
+            signals.append("postcode_city")
+            loc = re.search(rf"{ident.postcode}\s+{re.escape(ident.city)}", text, re.IGNORECASE)
+            return IdentityResult(0.92, signals, _context(text, loc.start(), loc.end()) if loc else None)
+    if ident.phone:
+        digits = re.sub(r"\D", "", ident.phone)[-8:]
+        if len(digits) == 8 and digits in re.sub(r"[^0-9]", "", text):
+            signals.append("registered_phone")
+            return IdentityResult(0.92, signals, name_loc and _context(text, *name_loc))
+    place = fold(ident.municipality or ident.city or "")
+    if place and re.search(rf"(?<![a-z0-9]){re.escape(place)}(?![a-z0-9])", folded):
+        signals.append("municipality_only")
+        return IdentityResult(0.70, signals, name_loc and _context(text, *name_loc))
+    return IdentityResult(0.50, signals, name_loc and _context(text, *name_loc))
