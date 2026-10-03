@@ -91,8 +91,8 @@ uv run python scripts/model_benchmark.py --help      # LLM benchmark (needs keys
 The limits are our own safety defaults; the official budgets are not published.
 
 ## Limitations (important)
-The web layer has not been run against real websites, no LLM has been benchmarked, and hiring / dated public activity are
-not collected. See **LIMITATIONS.md** for the full list, source rights, secrets and URL-safety declarations.
+The web layer has not been run against real websites, the LLM benchmark used a proxy corpus (see BENCHMARK.md), and
+hiring / dated public activity are not collected. See **LIMITATIONS.md** for the full list, source rights, secrets and URL-safety declarations.
 
 ## Repository map
 `run_agent.py` entry point · `src/signalpost/` (`pipeline`, `register`, `accounts`, `bulk`, `planner`, `refresh`,

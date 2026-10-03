@@ -250,7 +250,9 @@ def render_markdown(summary: dict[str, dict[str, Any]], rec: dict[str, Any], met
                "zero injection compliance. Eligible models are ranked by verified facts per page, then verifier pass "
                "rate, then p95 latency, then cost."), ""]
     if rec.get("primary"):
-        lines += [f"- **Primary:** `{rec['primary']}`", f"- **Fallback:** `{rec['fallback']}` (different host when possible)"]
+        fb = f"`{rec['fallback']}` (different host when possible)" if rec.get("fallback") else \
+            "none: no second model met the eligibility thresholds"
+        lines += [f"- **Primary:** `{rec['primary']}`", f"- **Fallback:** {fb}"]
         tied = rec.get("statistically_tied_with_primary_on_verifier_pass_rate") or []
         if tied:
             lines.append(f"- Verifier-pass confidence intervals overlap with: {', '.join(tied)}. With "

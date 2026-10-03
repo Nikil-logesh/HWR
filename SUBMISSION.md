@@ -30,10 +30,11 @@ Environment variables (all optional): `REQUEST_BUDGET_TOTAL`, `REQUEST_BUDGET_PE
 * **Official data (no key, no cost):** Brønnøysundregistrene Enhetsregisteret API + bulk files and Regnskapsregisteret
   API (data.brreg.no), NLOD 2.0. Company websites listed in the register (robots.txt honoured).
 * **LLM (optional, off by default):** primary NVIDIA build endpoint (OpenAI-compatible), fallback Gemini Flash-Lite via
-  Google AI Studio. **No model has been benchmarked** (no keys were available): `BENCHMARK.md` is marked NOT RUN and
-  recommends nothing. Candidate IDs confirmed in the NVIDIA catalogue: `deepseek-ai/deepseek-v4.1-flash`,
-  `google/gemma-4-31b-it`, `openai/gpt-oss-20b`, `nvidia/nemotron-3.5-lightning-30b-a3b`. If Builderr supplies a model key
-  (RULES.md allows asking), set `LLM_PRIMARY_*`; otherwise the agent runs without an LLM.
+  Google AI Studio. Three NVIDIA models were benchmarked on a **proxy corpus** (real Norwegian company text, not real
+  websites): `google/gemma-4-31b-it` (only eligible model, borderline on timeouts), `openai/gpt-oss-20b` (most reliable but
+  followed 1 of 3 prompt injections), `nvidia/nemotron-3.5-lightning-30b-a3b` (27% failures). `deepseek-ai/deepseek-v4.1-flash`
+  timed out on every call; Gemini Flash-Lite was not measured. Details and caveats: `BENCHMARK.md`. The agent also runs
+  without any LLM (default when no key is set).
 * **Dependency licences** (MIT / BSD / Apache-2.0 only) and full source-rights, secrets and URL-safety declarations:
   `LIMITATIONS.md`. No restricted platform (LinkedIn, Meta, Glassdoor, Indeed, Google/Bing results) is used.
 
@@ -66,7 +67,8 @@ Website requests (≤4 per website, throttled) were **not** exercised live; the 
 1. **Envelope shape:** we follow `kit/OUTPUT_CONTRACT.md`; the kit's reference runner emits a different legacy shape.
    Ask Builderr which one the evaluator reads (and whether a validator exists).
 2. **Web layer on real sites:** run a batch where websites are reachable and audit it (`make batch` + `make audit`).
-3. **LLM choice:** supply keys and run `make bench-models`; until then no model is recommended.
+3. **LLM choice:** benchmarked on a proxy corpus only; re-run with `--source web` once websites are reachable, and
+   measure Gemini Flash-Lite (needs a Google key) and re-test DeepSeek.
 4. **Official time / request / cost budgets** are unpublished; confirm them, or the defaults above apply.
 5. **Missing external families:** hiring and dated public activity are not collected (recall points on those are zero).
 6. **Revisions:** up to four more commit hashes may be submitted before 18 Oct 2026 (five versions total); each revision

@@ -154,9 +154,13 @@ def cmd_run(a) -> int:
 
 
 def cmd_report(a) -> int:
-    d = Path(a.results)
-    rows = [mb.Row(**json.loads(ln)) for ln in (d / "rows.jsonl").read_text(encoding="utf-8").splitlines() if ln.strip()]
-    pj = json.loads((d / "providers.json").read_text())
+    dirs = [Path(x) for x in a.results.split(",")]  # several result dirs (e.g. one per model run in parallel)
+    d = dirs[0]
+    rows, pj = [], {}
+    for dd in dirs:
+        rows += [mb.Row(**json.loads(ln)) for ln in (dd / "rows.jsonl").read_text(encoding="utf-8").splitlines()
+                 if ln.strip()]
+        pj.update(json.loads((dd / "providers.json").read_text()))
     providers = {n: Provider(n, v["base_url"], v["model"], "", v["price_in"], v["price_out"]) for n, v in pj.items()}
     summary = mb.summarize(rows, providers)
     rec = mb.recommend(summary)
@@ -193,7 +197,8 @@ def main() -> int:
     r.add_argument("--repeats", type=int, default=1)
     r.add_argument("--out", default=str(ROOT / "bench" / "results" / "latest"))
     p = sub.add_parser("report")
-    p.add_argument("--results", default=str(ROOT / "bench" / "results" / "latest"))
+    p.add_argument("--results", default=str(ROOT / "bench" / "results" / "latest"),
+                   help="results dir, or several separated by commas (merged)")
     p.add_argument("--write", default=str(ROOT / "BENCHMARK.md"))
     a = ap.parse_args()
     return {"corpus": cmd_corpus, "run": cmd_run, "report": cmd_report}[a.cmd](a)

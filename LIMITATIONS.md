@@ -6,8 +6,10 @@
    verifies a real site, and whether it ever verifies a wrong one, is unmeasured. A batch run with website access must be
    audited (`make audit`, `AUDIT.md`) before it is trusted. The most likely real-world effect is lower coverage (the gate
    is strict: it needs the organisation number, or legal name plus street address, postcode and city, or registered phone).
-2. **No LLM has been run.** No API keys were available. The pipeline works without any LLM (deterministic extraction);
-   the model benchmark harness exists but `BENCHMARK.md` contains no results. No model recommendation is made.
+2. **LLM benchmarked only on a proxy corpus.** `BENCHMARK.md` has real results for three NVIDIA-hosted models on real
+   Norwegian company text in synthetic page boilerplate, not on real websites; Gemini Flash-Lite and DeepSeek were not
+   measured (no key / timeouts). Only one model met the thresholds (gemma-4-31b-it, borderline on failures). The pipeline
+   works without any LLM (deterministic extraction).
 3. **Not collected at all: hiring/job postings and dated public activity (news, press).** These are required envelope
    sections and externally scored families. The agent states this in every profile's explanation instead of emitting a
    misleading `not_available`. No search-engine, LinkedIn, Meta or review-site collection is performed (restricted
