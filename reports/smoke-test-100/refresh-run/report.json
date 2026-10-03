@@ -1,0 +1,102 @@
+{
+ "available_facts_total": 2524,
+ "carried_forward_facts": 0,
+ "changes_total": 0,
+ "companies_input": 100,
+ "companies_with_changes": 0,
+ "completed_at": "2026-10-03T05:18:51.368805Z",
+ "contract_validation": {
+  "checks": {
+   "exactly_one_envelope_per_input": true,
+   "unique_organisation_numbers": true
+  },
+  "envelopes": 100,
+  "passed": true,
+  "problems": []
+ },
+ "control": {
+  "budget_exhausted": false,
+  "bulk": {
+   "mode": "auto"
+  },
+  "chunks": 5,
+  "cutoff_triggered": false,
+  "initial_plan_estimate": {
+   "entity": 100,
+   "estimated_requests": 340.0,
+   "estimated_requests_per_company": 3.4,
+   "financials": 100,
+   "roles": 100,
+   "subunits": 100,
+   "web": 10
+  },
+  "placeholders_due_to_cutoff": 0,
+  "replans": 5
+ },
+ "coverage_companies_with_field": {
+  "contact_email_1": 0,
+  "contact_phone_1": 0,
+  "employees": 18,
+  "financials.revenue": 74,
+  "financials.total_assets": 100,
+  "legal_name": 100,
+  "nace": 100,
+  "official_website": 0,
+  "registered_address": 100,
+  "registry_website": 10,
+  "roles": 100,
+  "social_facebook": 0,
+  "social_linkedin": 0,
+  "status": 100,
+  "website_description": 0,
+  "workplaces": 78
+ },
+ "coverage_pct": {
+  "contact_email_1": 0.0,
+  "contact_phone_1": 0.0,
+  "employees": 18.0,
+  "financials.revenue": 74.0,
+  "financials.total_assets": 100.0,
+  "legal_name": 100.0,
+  "nace": 100.0,
+  "official_website": 0.0,
+  "registered_address": 100.0,
+  "registry_website": 10.0,
+  "roles": 100.0,
+  "social_facebook": 0.0,
+  "social_linkedin": 0.0,
+  "status": 100.0,
+  "website_description": 0.0,
+  "workplaces": 78.0
+ },
+ "dropped_web_facts": 0,
+ "envelopes_written": 100,
+ "exactly_one_envelope_per_input": true,
+ "mean_facts_per_company": 25.24,
+ "operations": {
+  "company_runtime_ms_p50": 496,
+  "company_runtime_ms_p95": 1761,
+  "llm": null,
+  "requests_per_company_max": 5,
+  "requests_per_company_mean": 3.2,
+  "requests_per_company_p95": 5,
+  "requests_total_budgeted": 320,
+  "requests_total_envelopes": 320,
+  "third_party_cost_usd": 0.0,
+  "wall_clock_seconds": 28.39
+ },
+ "run_id": "smoke-refresh",
+ "settings": {
+  "cutoff_margin_seconds": 90,
+  "llm_providers": [],
+  "request_budget_per_company": 15,
+  "request_budget_total": 2000,
+  "wall_clock_seconds": 2700,
+  "web": true,
+  "workers": 8
+ },
+ "started_at": "2026-10-03T05:18:39.364844Z",
+ "terminal_status_counts": {
+  "completed": 100
+ }
+}

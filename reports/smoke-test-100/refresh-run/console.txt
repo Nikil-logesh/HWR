@@ -1,0 +1,41 @@
+[  5/100]   4.2 companies/s  elapsed    1.2s  requests 27
+[ 10/100]   6.0 companies/s  elapsed    1.7s  requests 49
+[ 15/100]   8.6 companies/s  elapsed    1.7s  requests 55
+[ 20/100]   9.1 companies/s  elapsed    2.2s  requests 72
+[ 25/100]   5.5 companies/s  elapsed    4.5s  requests 101
+[ 30/100]   6.6 companies/s  elapsed    4.5s  requests 103
+[ 35/100]   6.9 companies/s  elapsed    5.0s  requests 125
+[ 40/100]   7.2 companies/s  elapsed    5.6s  requests 142
+[ 45/100]   7.5 companies/s  elapsed    6.0s  requests 154
+[ 50/100]   6.7 companies/s  elapsed    7.4s  requests 179
+[ 55/100]   7.4 companies/s  elapsed    7.4s  requests 181
+[ 60/100]   7.6 companies/s  elapsed    7.9s  requests 205
+[ 65/100]   7.7 companies/s  elapsed    8.4s  requests 226
+[ 70/100]   8.3 companies/s  elapsed    8.4s  requests 226
+[ 75/100]   8.4 companies/s  elapsed    9.0s  requests 250
+[ 80/100]   8.5 companies/s  elapsed    9.5s  requests 270
+[ 85/100]   8.3 companies/s  elapsed   10.2s  requests 291
+[ 90/100]   8.6 companies/s  elapsed   10.5s  requests 300
+[ 95/100]   8.7 companies/s  elapsed   10.9s  requests 308
+[100/100]   8.4 companies/s  elapsed   12.0s  requests 320
+Run smoke-refresh: 100/100 envelopes (one per input: True), status {'completed': 100}
+Time 28.39s | requests 320 (mean 3.2/company, p95 5) | cost $0.0
+Coverage (companies with field):
+  legal_name                   100  100.0%
+  status                       100  100.0%
+  nace                         100  100.0%
+  registered_address           100  100.0%
+  employees                     18   18.0%
+  roles                        100  100.0%
+  financials.revenue            74   74.0%
+  financials.total_assets      100  100.0%
+  workplaces                    78   78.0%
+  registry_website              10   10.0%
+  official_website               0    0.0%
+  website_description            0    0.0%
+  contact_email_1                0    0.0%
+  contact_phone_1                0    0.0%
+  social_linkedin                0    0.0%
+  social_facebook                0    0.0%
+Changes: 0 in 0 companies | dropped web facts: 0 | carried forward: 0
+wrote reports/smoke-test-100/refresh-run/envelopes.jsonl and reports/smoke-test-100/refresh-run/report.json and reports/smoke-test-100/refresh-run/report.html
