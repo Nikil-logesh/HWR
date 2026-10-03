@@ -374,7 +374,7 @@ def test_refresh_detects_new_and_closed_jobs_and_new_activity_and_always_recrawl
 
 def test_group_site_naming_other_organisations_fails_closed():
     group = home().replace("Org.nr. 910 000 012.", "Org.nr. 910 000 012. Datterselskap: Nordvik Eiendom AS, org.nr. 910 000 020.")
-    cs, out, hits, c = run({"/": group, "/karriere": LISTING, "/feed.xml": (RSS, XML)})
+    _cs, out, hits, c = run({"/": group, "/karriere": LISTING, "/feed.xml": (RSS, XML)})
     assert out.state == "verified" and c["official_website"].availability == "available"  # identity itself is fine
     assert c["open_positions"].availability == "ambiguous" and c["public_activity"].availability == "ambiguous"
     assert "910000020" in c["open_positions"].note and "/karriere" not in hits and "/feed.xml" not in hits
