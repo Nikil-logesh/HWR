@@ -1,0 +1,62 @@
+# Limitations, source rights, secrets and URL safety
+
+## Known limitations (read before trusting a number)
+1. **The web layer has never run against real websites.** The build sandbox could not reach company sites. It is tested
+   with synthetic pages and mocked networks only (identity gate, verifier, robots, SSRF, budgets). How often the gate
+   verifies a real site, and whether it ever verifies a wrong one, is unmeasured. A batch run with website access must be
+   audited (`make audit`, `AUDIT.md`) before it is trusted. The most likely real-world effect is lower coverage (the gate
+   is strict: it needs the organisation number, or legal name plus street address, postcode and city, or registered phone).
+2. **No LLM has been run.** No API keys were available. The pipeline works without any LLM (deterministic extraction);
+   the model benchmark harness exists but `BENCHMARK.md` contains no results. No model recommendation is made.
+3. **Not collected at all: hiring/job postings and dated public activity (news, press).** These are required envelope
+   sections and externally scored families. The agent states this in every profile's explanation instead of emitting a
+   misleading `not_available`. No search-engine, LinkedIn, Meta or review-site collection is performed (restricted
+   platforms; search results are not evidence).
+4. **Group structure and annual-report PDF parsing are not implemented.** Financial history comes from the multi-year
+   accounts response; filing-year lists are opt-in (rate-limited endpoint).
+5. **Envelope shape.** The agent follows `kit/OUTPUT_CONTRACT.md`. The kit's reference runner emits a different legacy
+   envelope (`state`, `modules`, `profile`) and the kit ships no validator for the contract; `signalpost.validate` is our
+   own. Which shape the official evaluator reads is unconfirmed and should be asked of Builderr.
+6. **Limits are assumed.** Official time/request/cost budgets are not published. Defaults (45 min, 2,000 requests,
+   $10) are our own safety limits, configurable in `.env`.
+7. **Bulk downloads cost time.** The roles and workplaces snapshots are ~130 MB + ~89 MB (about 2 minutes here); they are
+   used from 300 companies upward (`BULK_THRESHOLD`). If either fails the agent falls back to per-company requests.
+8. **Brreg quirks seen live:** the accounts endpoint answers HTTP 500 for some entities (banks, funds, a few ordinary
+   companies); recorded as `failed` for that field only. The frozen universe file is older than the live register
+   (renames observed), so names always come from the register.
+9. **Refresh is verified on replays and live reruns of the same companies,** not on real register changes (none occurred
+   during development). The entity endpoint sends no ETag, so changes are found by value/content-hash comparison.
+10. **Wall-clock cutoff is tested with a fake clock;** a real 45-minute run was never performed.
+
+## Source rights
+| source | use | terms |
+|---|---|---|
+| Enhetsregisteret API + bulk files (data.brreg.no) | identity, address, status, roles, workplaces | Norwegian Licence for Open Government Data (NLOD 2.0) |
+| Regnskapsregisteret API (data.brreg.no) | annual accounts (only source of financial values) | NLOD 2.0; rate limits respected (filing-years endpoint throttled to ~28/min) |
+| Company websites | only the website listed in the official register, only after the identity gate | robots.txt honoured (explicit disallow => `blocked`), 1 s per-domain throttle, max 4 requests per company, no login, no crawling beyond home + 2 pages |
+| NVIDIA build / Google AI Studio (optional LLM) | verbatim text extraction from already-fetched, identity-verified pages | provider terms; keys supplied by the operator; no data is stored by us beyond the run output |
+
+Not used: LinkedIn, Facebook/Instagram, Google/Bing result pages, Glassdoor, Indeed, search APIs, directories.
+Person data: role holders' names and roles are public register data and are shown; birth dates and death flags are
+never read or stored (scrubbed from recorded fixtures too).
+
+## Dependencies and licences (pinned in `uv.lock`; read from installed package metadata)
+beautifulsoup4 4.15.0 (MIT), extruct 0.18.0 (BSD), httpx 0.28.1 (BSD-3-Clause), lxml 6.1.3 (BSD-3-Clause),
+pydantic 2.13.5 (MIT), pypdf 6.19.0 (BSD-3-Clause), tldextract 5.3.2 (BSD-3-Clause), trafilatura 2.3.0 (Apache-2.0);
+dev: pytest 8.4.2 (MIT), ruff 0.16.10 (MIT). `kit/` is the Builderr starter kit, unmodified, imported as a library.
+
+## Secrets
+Keys are read only from environment variables / `.env` (git-ignored; `.env.example` has no values) and are sent only
+in the `Authorization` header to the configured provider. A test asserts a key never appears in envelopes, the report
+or the HTML even when the provider echoes it in an error body. Nothing is logged with credentials.
+
+## Outbound URL safety
+Public http(s) only. localhost/.local/.internal names, credentials in URLs, and any host that is or resolves to a
+non-global address (private, loopback, link-local such as 169.254.169.254, reserved) are refused, again on every
+redirect hop (max 3, re-validated). Response bodies are capped at 1 MB and must be HTML. Residual risk: DNS rebinding
+between the check and the connection is not prevented. Hostile page text is never executed or rendered unescaped:
+the HTML report escapes every value and only links http(s) URLs.
+
+## External caches
+`OUT/state.sqlite` (previous profiles for refresh, homepage content hashes) is the only persistent state; it is created
+under the output directory and can be deleted. Bulk files are streamed, never written to disk.

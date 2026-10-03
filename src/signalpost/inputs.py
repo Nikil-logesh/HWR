@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .universe import iter_rows, valid_orgnr
+from .universe import valid_orgnr
 
 
 @dataclass
@@ -70,8 +70,8 @@ def csv_row_to_entity(row: dict[str, str]) -> dict[str, Any]:
     same claim extractor serves both. Empty cells are dropped; booleans/ints/decimals are typed."""
     out: dict[str, Any] = {}
     for key, raw in row.items():
-        if raw in (None, ""):
-            continue
+        if not isinstance(key, str) or not isinstance(raw, str) or raw == "":
+            continue  # malformed row (extra fields land under a None key as a list): ignore, never crash
         key = _KEY_FIX.get(key, key)
         val: Any = _BOOL.get(raw.lower(), raw)
         if key in _INTS and raw.lstrip("-").isdigit():
@@ -91,30 +91,57 @@ def csv_row_to_entity(row: dict[str, str]) -> dict[str, Any]:
     return out
 
 
+def _open_text(path: Path):
+    """Open by CONTENT, not extension: the Brreg bulk download is gzip even when saved as `.csv` (as the kit's
+    README does). Handles a UTF-8 BOM."""
+    with path.open("rb") as fh:
+        magic = fh.read(2)
+    if magic == b"\x1f\x8b":
+        return gzip.open(path, "rt", encoding="utf-8-sig", newline="")
+    return path.open(encoding="utf-8-sig", newline="")
+
+
 def load_registry_rows(path: str | Path | None, wanted: set[str]) -> dict[str, dict[str, Any]]:
-    """Stream the universe JSONL(.gz) or the Brreg bulk CSV and keep only the wanted organisation numbers."""
+    """Stream the Brreg bulk CSV (any delimiter, gzip or plain) or the universe JSONL and keep only the wanted
+    organisation numbers. A Git LFS pointer or unreadable file yields {} with a warning (never a crash)."""
     if not path or not Path(path).exists() or not wanted:
         return {}
     p = Path(path)
     found: dict[str, dict[str, Any]] = {}
-    if p.suffix in (".csv", ".gz") and ".csv" in "".join(p.suffixes):
-        from norway_company_agent.sampling import normalize_row
-        opener = gzip.open if p.suffix == ".gz" else open
-        with opener(p, "rt", encoding="utf-8", newline="") as fh:
-            for row in csv.DictReader(fh):
+    try:
+        with _open_text(p) as fh:
+            head = fh.read(8192)
+            fh.seek(0)
+            if head.startswith("version https://git-lfs"):
+                raise RuntimeError(f"{p} is a Git LFS pointer, not data")
+            if head.lstrip().startswith("{"):  # JSONL universe
+                for ln in fh:
+                    if not ln.strip():
+                        continue
+                    row = json.loads(ln)
+                    org = row.get("organisation_number")
+                    if org in wanted:
+                        found[org] = row
+                        if len(found) == len(wanted):
+                            break
+                return found
+            from norway_company_agent.sampling import normalize_row
+            # Delimiter from the header line, standard quoting. (csv.Sniffer guessed doublequote=False on the real
+            # file and mis-parsed every row containing an escaped quote.)
+            header = head.split("\n", 1)[0]
+            delim = max(",;\t", key=header.count)
+            for row in csv.DictReader(fh, delimiter=delim):
                 org = row.get("organisasjonsnummer") or row.get("Organisasjonsnummer")
                 if org in wanted:
                     n = normalize_row(row)
                     n.pop("raw", None)
-                    n["_entity"] = csv_row_to_entity(row)  # full record: lets the entity module run at 0 requests
+                    n["_entity"] = csv_row_to_entity(row)  # full record: entity module runs at 0 requests
                     found[org] = n
                     if len(found) == len(wanted):
                         break
-        return found
-    for row in iter_rows(p):
-        org = row.get("organisation_number")
-        if org in wanted:
-            found[org] = row
-            if len(found) == len(wanted):
-                break
+    except (RuntimeError, OSError, UnicodeDecodeError, ValueError) as exc:
+        import sys
+        print(f"warning: registry file {p} unusable ({type(exc).__name__}: {exc}); "
+              "continuing without the free register fallback", file=sys.stderr)
+        return {}
     return found

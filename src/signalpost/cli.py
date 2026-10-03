@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import os
+import shutil
 import signal
 import sys
 import time
@@ -43,6 +44,12 @@ def main(argv: list[str] | None = None) -> int:
     r = sub.add_parser("run", help="research a batch of organisation numbers")
     r.add_argument("--organisations", "--input", required=True, help="JSON / JSONL / text list of organisation numbers")
     r.add_argument("--out", default="out", help="output directory (envelopes.jsonl, report.json, state.sqlite)")
+    r.add_argument("--output", default=None, help="envelopes file (default OUT/envelopes.jsonl)")
+    r.add_argument("--profiles-output", default=None, help="also copy the envelopes here (kit-compatible flag)")
+    r.add_argument("--report", default=None, help="run report path (default OUT/report.json)")
+    r.add_argument("--html", default=None, help="human-readable report (default OUT/report.html; 'none' disables)")
+    r.add_argument("--resume", action="store_true", help="accepted for kit compatibility; runs are idempotent anyway")
+    r.add_argument("--checkpoint-every", type=int, default=None, help="accepted for kit compatibility (ignored)")
     r.add_argument("--bulk", "--universe", dest="registry", default=None,
                    help="Brreg bulk CSV or universe JSONL(.gz): free identity fallback (default data/orgs.json)")
     r.add_argument("--previous", default=None, help="envelopes.jsonl from an earlier run, for change detection")
@@ -65,6 +72,10 @@ def main(argv: list[str] | None = None) -> int:
     workers = a.workers or s.max_workers
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
+    env_path = Path(a.output) if a.output else out / "envelopes.jsonl"
+    report_path = Path(a.report) if a.report else out / "report.json"
+    env_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
     run_id = a.run_id or datetime.now(UTC).strftime("run-%Y%m%dT%H%M%SZ")
     inputs = read_inputs(a.organisations)
     if a.expected_count is not None and len(inputs) != a.expected_count:
@@ -140,7 +151,7 @@ def main(argv: list[str] | None = None) -> int:
 
     first_plan = summarize(plan_fn(inputs)) if fixed is None else {"fixed_modules": list(fixed)}  # before spending
     envs, info = run_planned_batch(inputs, make, placeholder, plan_fn, run_id=run_id, workers=workers,
-                                   out_path=out / "envelopes.jsonl", budget=budget, progress=progress)
+                                   out_path=env_path, budget=budget, progress=progress)
     report = build_report(envs, run_id=run_id, started_at=started_at, wall_s=time.monotonic() - t_start,
                           budget_used=budget.used, expected=len(inputs), llm_usage=llm.usage if llm else None,
                           settings={"workers": workers, "web": not a.no_web,
@@ -151,11 +162,18 @@ def main(argv: list[str] | None = None) -> int:
                                     "cutoff_margin_seconds": s.cutoff_margin_seconds})
     report["control"] = {**{k: v for k, v in info.items() if k != "plans"}, "replans": len(info["plans"]), "bulk": bulk_info,
                          "initial_plan_estimate": first_plan, "budget_exhausted": budget.used >= budget.total}
-    report["contract_validation"] = validate_file(out / "envelopes.jsonl", [i.org or i.raw for i in inputs])
-    (out / "report.json").write_text(json.dumps(report, indent=1, ensure_ascii=False, sort_keys=True) + "\n",
+    report["contract_validation"] = validate_file(env_path, [i.org or i.raw for i in inputs])
+    report_path.write_text(json.dumps(report, indent=1, ensure_ascii=False, sort_keys=True) + "\n",
                                      encoding="utf-8")
     print(render_report(report))
-    print(f"wrote {out / 'envelopes.jsonl'} and {out / 'report.json'}")
+    if a.profiles_output:
+        Path(a.profiles_output).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(env_path, a.profiles_output)
+    html_path = None if a.html == "none" else Path(a.html) if a.html else out / "report.html"
+    if html_path:
+        from .htmlreport import write_report
+        write_report(envs, report, html_path)
+    print(f"wrote {env_path} and {report_path}" + (f" and {html_path}" if html_path else ""))
     return 0 if report["exactly_one_envelope_per_input"] and report["contract_validation"]["passed"] else 2
 
 
