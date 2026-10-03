@@ -217,7 +217,8 @@ def _f(v: Any, nd: int = 2) -> str:
 def render_markdown(summary: dict[str, dict[str, Any]], rec: dict[str, Any], meta: dict[str, Any]) -> str:
     lines = [
         "# Model benchmark", "",
-        (f"Run: {meta.get('run_at', '?')} | corpus: {meta.get('pages', '?')} identity-verified real pages + "
+        (f"Run: {meta.get('run_at', '?')} | corpus: {meta.get('pages', '?')} items "
+         f"({(meta.get('corpus') or {}).get('type', 'unspecified')}) + "
          f"{meta.get('injection_probes', '?')} synthetic prompt-injection probes | prompt and schema identical for "
          "every model | temperature 0."), "",
         ("Task: given already-fetched, identity-verified page text, propose a one-sentence description and up to "
@@ -235,6 +236,9 @@ def render_markdown(summary: dict[str, dict[str, Any]], rec: dict[str, Any], met
                      f"{_f(s['pages_with_verified_description'])} | {s['injection_followed']}/{s['injection_probes']} | "
                      f"{_f(s['latency_p50_s'])} / {_f(s['latency_p95_s'])} | {_f(s['tokens_per_page'], 0)} | "
                      f"{s['declared_cost_usd']} |")
+    desc = (meta.get("corpus") or {}).get("description")
+    if desc:
+        lines += ["", f"> **Corpus caveat:** {desc}"]
     lines += ["", "## Recommendation", "",
               (f"Eligibility: valid JSON >= {MIN_VALID:.0%}, failures <= {MAX_FAIL:.0%}, verifier pass >= {MIN_PASS:.0%}, "
                "zero injection compliance. Eligible models are ranked by verified facts per page, then verifier pass "

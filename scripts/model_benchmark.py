@@ -51,7 +51,46 @@ def load_providers(path: Path, only: set[str] | None) -> tuple[list[Provider], l
     return out, skipped
 
 
+def cmd_corpus_proxy(a) -> int:
+    """No network: real company-authored Norwegian text (registered purpose / activity statements from the Brreg bulk
+    CSV) wrapped in typical page boilerplate. Tests JSON validity, verbatim copying, injection resistance and latency;
+    it does NOT measure yield on real website HTML. Recorded in corpus_meta.json and printed in BENCHMARK.md."""
+    import csv
+    import gzip
+    wanted: list[dict] = []
+    with open(a.csv, "rb") as probe:
+        opener = gzip.open if probe.read(2) == b"\x1f\x8b" else open
+    with opener(a.csv, "rt", encoding="utf-8-sig", newline="") as fh:
+        for row in csv.DictReader(fh):
+            text = (row.get("aktivitet") or row.get("vedtektsfestetFormaal") or "").replace("\n", " ").strip()
+            if row.get("organisasjonsform.kode") == "AS" and 90 <= len(text) <= 700 and row.get("navn"):
+                wanted.append({**row, "_text": text})
+    random.Random(a.seed).shuffle(wanted)
+    items = []
+    for r in wanted[: a.count]:
+        name, org = r["navn"], r["organisasjonsnummer"]
+        f = f"{org[:3]} {org[3:6]} {org[6:]}"
+        street = (r.get("forretningsadresse.adresse") or "").splitlines()
+        address = (f"{name}, {street[0] if street else ''}, {r.get('forretningsadresse.postnummer', '')} "
+                   f"{r.get('forretningsadresse.poststed', '')}")
+        text = "\n".join([
+            f"{name} – Hjem | Om oss | Tjenester | Kontakt | Logg inn", f"Velkommen til {name}", "Om oss", r["_text"],
+            "Kontakt oss", address, f"Org.nr. {f}",
+            "Vi bruker informasjonskapsler for å gi deg en bedre opplevelse. Godta alle | Innstillinger",
+            f"© 2026 {name}. Alle rettigheter forbeholdt. Personvern | Vilkår"])
+        items.append(mb.CorpusItem(org, name, "real", [{"url": f"https://proxy.invalid/{org}/", "text": text, "corpus": text}]))
+    mb.save_corpus(items, a.out)
+    Path(a.out, "corpus_meta.json").write_text(json.dumps({
+        "type": "register_text_proxy", "items": len(items), "seed": a.seed,
+        "description": ("Real company-authored Norwegian text (registered purpose/activity from the Brreg bulk CSV) wrapped "
+                        "in synthetic page boilerplate. Not real website HTML: yields on real sites may differ.")}, indent=1))
+    print(f"proxy corpus: {len(items)} items -> {a.out}")
+    return 0 if items else 1
+
+
 def cmd_corpus(a) -> int:
+    if a.source == "register-text":
+        return cmd_corpus_proxy(a)
     rows = [r for r in iter_rows(a.universe) if r.get("website")]
     random.Random(a.seed).shuffle(rows)
     budget = Budget(10**6, 10**6)
@@ -82,6 +121,7 @@ def cmd_corpus(a) -> int:
         print(f"{org} {ident.name[:40]:<40} {out.state}", file=sys.stderr)
     mb.save_corpus(items, a.out)
     Path(a.out, "_corpus_stats.json").write_text(json.dumps(stats, indent=1))
+    Path(a.out, "corpus_meta.json").write_text(json.dumps({"type": "real_web_pages", "items": len(items), "stats": stats}))
     print(f"corpus: {len(items)} verified pages saved to {a.out}; identity-gate outcomes on live sites: {stats}")
     return 0 if items else 1
 
@@ -103,6 +143,9 @@ def cmd_run(a) -> int:
             all_rows += rows
     (out / "rows.jsonl").write_text("".join(json.dumps(asdict(r), ensure_ascii=False) + "\n" for r in all_rows),
                                     encoding="utf-8")
+    meta_src = Path(a.corpus) / "corpus_meta.json"
+    if meta_src.exists():
+        (out / "corpus_meta.json").write_text(meta_src.read_text())
     (out / "providers.json").write_text(json.dumps(
         {p.name: {"model": p.model, "base_url": p.base_url, "price_in": p.price_in, "price_out": p.price_out}
          for p in providers}, indent=1))
@@ -118,7 +161,9 @@ def cmd_report(a) -> int:
     summary = mb.summarize(rows, providers)
     rec = mb.recommend(summary)
     first = next(iter(summary.values()), {})
-    meta = {"run_at": datetime.fromtimestamp((d / "rows.jsonl").stat().st_mtime, UTC).strftime("%Y-%m-%d %H:%M UTC"),
+    cm = d / "corpus_meta.json"
+    corpus_meta = json.loads(cm.read_text()) if cm.exists() else {}
+    meta = {"corpus": corpus_meta, "run_at": datetime.fromtimestamp((d / "rows.jsonl").stat().st_mtime, UTC).strftime("%Y-%m-%d %H:%M UTC"),
             "pages": first.get("pages", 0), "injection_probes": first.get("injection_probes", 0)}
     (d / "summary.json").write_text(json.dumps({"summary": summary, "recommendation": rec, "meta": meta}, indent=1,
                                                ensure_ascii=False))
@@ -137,6 +182,9 @@ def main() -> int:
     c.add_argument("--max-attempts", type=int, default=150)
     c.add_argument("--seed", type=int, default=20261003)
     c.add_argument("--universe", default=str(ROOT / "data" / "orgs.json"))
+    c.add_argument("--source", choices=["web", "register-text"], default="web",
+                   help="web: identity-verified real pages (needs network); register-text: offline proxy corpus")
+    c.add_argument("--csv", default=None, help="Brreg bulk CSV for --source register-text")
     c.add_argument("--out", default=str(ROOT / "bench" / "corpus"))
     r = sub.add_parser("run")
     r.add_argument("--corpus", default=str(ROOT / "bench" / "corpus"))
