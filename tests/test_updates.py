@@ -6,7 +6,15 @@ import httpx
 
 from signalpost.budget import Budget
 from signalpost.httpcache import ApiClient
-from signalpost.pipeline import register_envelope
+from signalpost.pipeline import register_envelope as _register_envelope
+
+ALL_MODULES = ("financials", "entity", "roles", "subunits", "history")
+
+
+def register_envelope(*a, **kw):
+    kw.setdefault("modules", ALL_MODULES)
+    return _register_envelope(*a, **kw)
+
 from signalpost.refresh import apply_refresh
 from signalpost.store import SnapshotStore
 from signalpost.web.fetch import WebFetcher

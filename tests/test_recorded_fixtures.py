@@ -9,7 +9,15 @@ import pytest
 from signalpost.accounts import FIELDS, _dig
 from signalpost.httpcache import ApiClient
 from signalpost.models import Envelope
-from signalpost.pipeline import register_envelope
+from signalpost.pipeline import register_envelope as _register_envelope
+
+ALL_MODULES = ("financials", "entity", "roles", "subunits", "history")
+
+
+def register_envelope(*a, **kw):
+    kw.setdefault("modules", ALL_MODULES)
+    return _register_envelope(*a, **kw)
+
 
 REC = sorted((Path(__file__).parent / "fixtures" / "recorded").glob("*.json"))
 

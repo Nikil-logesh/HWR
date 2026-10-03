@@ -13,7 +13,7 @@ lint:
 
 # make run INPUT=companies.jsonl OUT=out/ [BULK=brreg-enheter.csv]
 run:
-	$(PY) -m signalpost.cli run --organisations "$(INPUT)" --out "$(OUT)" $(if $(BULK),--bulk "$(BULK)",)
+	$(PY) run_agent.py run --organisations "$(INPUT)" --out "$(OUT)" $(if $(BULK),--bulk "$(BULK)",)
 
 # make sample  -> samples/{submission,daily,dev}.jsonl (seeded, reproducible)
 sample:

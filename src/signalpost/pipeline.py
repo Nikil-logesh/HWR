@@ -6,6 +6,7 @@ from typing import Any
 
 from . import accounts, register
 from .claims import ClaimSet
+from .explain import explain
 from .httpcache import ApiClient, Fetched, utc_now
 from .models import Envelope, Operations, Run
 from .refresh import apply_refresh
@@ -16,7 +17,7 @@ from .web.identity import CompanyIdentity
 from .web.llm import LlmClient
 
 # Priority order under budget pressure: most valuable per request first.
-DEFAULT_MODULES = ("financials", "entity", "roles", "subunits", "history")
+DEFAULT_MODULES = ("financials", "entity", "roles", "subunits")  # "history" is opt-in (rate-limited)
 
 
 def _identity(org: str, cs: ClaimSet, row: dict[str, Any] | None) -> CompanyIdentity | None:
@@ -69,12 +70,12 @@ def register_envelope(org: str, client: ApiClient, *, run_id: str, universe_row:
             website = next((x.value for x in cs.claims if x.field == "registry_website" and x.availability == "available"), None)
             ident = _identity(org, cs, universe_row)
             if ident is not None:
-                llm_before = llm.usage.requests if llm else 0
+                llm_before = llm.thread_requests() if llm else 0
                 prior_sha = store.get_web_state(org)[0] if store else None
                 web = enrich_website(cs, ident, website, fetcher, llm, prior_sha=prior_sha, previous=previous)
                 if store and web.homepage_sha:
                     store.set_web_state(org, web.homepage_sha, website)
-                requests += web.requests + ((llm.usage.requests - llm_before) if llm else 0)
+                requests += web.requests + ((llm.thread_requests() - llm_before) if llm else 0)
                 # informational: facts the verifier refused to publish (not a run error)
                 errors.extend({"module": "web", "kind": "dropped_fact", **d} for d in web.dropped)
     except Exception as exc:  # noqa: BLE001 - one bad company must never drop its envelope
@@ -88,6 +89,7 @@ def register_envelope(org: str, client: ApiClient, *, run_id: str, universe_row:
     )
     if previous is not None or store is not None:
         env = apply_refresh(previous, env, now or env.run.completed_at)
-        if store is not None and env.run.terminal_status != "failed":
-            store.save(env)
+    env = env.model_copy(update={"explanation": explain(env, had_previous=previous is not None)})
+    if store is not None and env.run.terminal_status != "failed":
+        store.save(env)
     return env

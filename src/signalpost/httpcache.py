@@ -18,6 +18,7 @@ import httpx
 
 from .budget import Budget
 
+SLOW_ENDPOINTS = {"/aarsregnskap/kopi/": 2.1}  # Brreg: ~30 requests/minute on the filing-years endpoint
 USER_AGENT = "signalpost-agent/0.1 (Builderr hackathon entry; official-API reads only)"
 
 
@@ -53,6 +54,19 @@ class ApiClient:
         self._db.execute("CREATE TABLE IF NOT EXISTS http_cache(url TEXT PRIMARY KEY, etag TEXT, status INT, "
                          "body BLOB, sha256 TEXT, fetched_at TEXT)")
         self._lock = threading.Lock()
+        self._slow_lock = threading.Lock()
+        self._slow_next: dict[str, float] = {}
+        self._clock = time.monotonic
+
+    def _pace(self, url: str) -> None:
+        for marker, gap in SLOW_ENDPOINTS.items():
+            if marker in url:
+                with self._slow_lock:
+                    start = max(self._clock(), self._slow_next.get(marker, 0.0))
+                    self._slow_next[marker] = start + gap
+                delay = start - self._clock()
+                if delay > 0:
+                    self.sleeper(delay)
 
     def _cached(self, url: str):
         with self._lock:
@@ -72,6 +86,7 @@ class ApiClient:
             if not self.budget.take(org):
                 return Fetched(url, -1, error="budget_exhausted", retrieved_at=utc_now(), requests=used)
             used += 1
+            self._pace(url)
             try:
                 resp = self._http.get(url, headers=headers)
             except httpx.HTTPError as exc:

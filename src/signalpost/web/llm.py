@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import time
 from dataclasses import dataclass, field
 
@@ -55,11 +56,21 @@ class LlmClient:
                  sleeper=time.sleep, timeout: float = 40.0):
         self.providers, self.budget, self.sleeper = providers, budget, sleeper
         self.usage = Usage()
+        self._lock = threading.Lock()
+        self._local = threading.local()  # per-thread request counter => correct per-company accounting
         self._http = httpx.Client(transport=transport, timeout=timeout)
+
+    def thread_requests(self) -> int:
+        """Requests made by the calling thread so far (use before/after deltas for one company)."""
+        return getattr(self._local, "n", 0)
 
     @property
     def enabled(self) -> bool:
         return bool(self.providers)
+
+    def _fail(self) -> None:
+        with self._lock:
+            self.usage.failures += 1
 
     def complete_json(self, user: str, org: str) -> dict | None:
         """Try providers in order; 429/5xx back off once then fall through. Returns parsed JSON or None."""
@@ -67,8 +78,10 @@ class LlmClient:
             for attempt in range(2):
                 if not self.budget.take(org):
                     return None
-                self.usage.requests += 1
-                self.usage.by_provider[p.name] = self.usage.by_provider.get(p.name, 0) + 1
+                self._local.n = self.thread_requests() + 1
+                with self._lock:
+                    self.usage.requests += 1
+                    self.usage.by_provider[p.name] = self.usage.by_provider.get(p.name, 0) + 1
                 try:
                     r = self._http.post(f"{p.base_url}/chat/completions",
                                         headers={"Authorization": f"Bearer {p.api_key}"},
@@ -77,10 +90,10 @@ class LlmClient:
                                               "messages": [{"role": "system", "content": SYSTEM},
                                                            {"role": "user", "content": user}]})
                 except httpx.HTTPError:
-                    self.usage.failures += 1
+                    self._fail()
                     break
                 if r.status_code in (429, 500, 502, 503, 504):
-                    self.usage.failures += 1
+                    self._fail()
                     if attempt == 0:
                         try:
                             self.sleeper(min(float(r.headers.get("retry-after", "")), 20.0))
@@ -89,17 +102,18 @@ class LlmClient:
                         continue
                     break
                 if r.status_code != 200:
-                    self.usage.failures += 1
+                    self._fail()
                     break
                 try:
                     body = r.json()
                     u = body.get("usage") or {}
-                    self.usage.prompt_tokens += int(u.get("prompt_tokens") or 0)
-                    self.usage.completion_tokens += int(u.get("completion_tokens") or 0)
-                    self.usage.cost_usd += (int(u.get("prompt_tokens") or 0) * p.price_in
-                                            + int(u.get("completion_tokens") or 0) * p.price_out) / 1e6
+                    pt, ct = int(u.get("prompt_tokens") or 0), int(u.get("completion_tokens") or 0)
+                    with self._lock:
+                        self.usage.prompt_tokens += pt
+                        self.usage.completion_tokens += ct
+                        self.usage.cost_usd += (pt * p.price_in + ct * p.price_out) / 1e6
                     return json.loads(body["choices"][0]["message"]["content"])
                 except (ValueError, KeyError, IndexError, TypeError):
-                    self.usage.failures += 1
+                    self._fail()
                     break
         return None
