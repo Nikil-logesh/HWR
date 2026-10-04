@@ -13,7 +13,7 @@ from .identity import GENERIC_TOKENS, CompanyIdentity, core_tokens
 from .text import fold
 
 DISCOVERY_MIN_SCORE = 0.95
-MAX_CANDIDATES = 3
+MAX_CANDIDATES = 4
 # entity types whose public pages are usually a manager's or a platform's, not their own domain
 SKIP_FIRST_WORDS = {"borettslag", "borettslaget", "sameie", "sameiet", "boligsameie", "boligsameiet", "boligselskap",
                     "boligselskapet", "eierseksjonssameie", "stiftelsen", "stiftelse", "legat", "legatet", "fond", "fondet"}
@@ -31,7 +31,7 @@ def worth_trying(name: str) -> bool:
 
 
 def candidate_urls(name: str, limit: int = MAX_CANDIDATES) -> list[str]:
-    """Homepage candidates, most likely first: name.no, name-with-hyphens.no, name.com."""
+    """Homepage candidates, most likely first: name.no, name-with-hyphens.no, first-word.no, name.com."""
     toks = _tokens(name)
     if not toks or not worth_trying(name):
         return []
@@ -39,6 +39,9 @@ def candidate_urls(name: str, limit: int = MAX_CANDIDATES) -> list[str]:
     labels = [(joined, "no")]
     if len(toks) > 1:
         labels.append((dashed, "no"))
+    lead = next((t for t in toks[:1] if len(t) >= 6 and t not in GENERIC_TOKENS), None)  # "nordalen" for "NORDALEN LANDBRUKSSERVICE"
+    if len(toks) > 1 and lead:
+        labels.append((lead, "no"))
     labels.append((joined, "com"))
     out: list[str] = []
     for label, tld in labels:

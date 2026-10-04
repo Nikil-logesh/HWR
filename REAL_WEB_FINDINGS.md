@@ -111,3 +111,34 @@ of an official batch listing a website, a 1,000-company batch would spend roughl
 deadline and request budget still apply, and a failed or slow call just leaves description/services out.
 The injection risk measured in `BENCHMARK.md` is unchanged: the verifier stops text that is not on the page, not text that
 is on the page and hostile.
+
+## Website discovery for companies with no registered website (2026-10-04)
+~89% of companies list no website, so they got no web facts at all. New: domain names built from the legal name
+(`nordvikbygg.no`, `nordvik-bygg.no`, `nordvik.no` for a distinctive first word, `nordvikbygg.com`; at most 4) are tried as
+**candidates only** (RULES.md: discovery generates candidates, not evidence). A candidate is probed with robots + homepage,
+dropped unless its homepage mentions a distinctive word of the company's name (or its organisation number), and then
+run through the normal identity gate with a **stricter threshold, 0.95**: the organisation number, or the full legal name
+plus the exact street address. A guessed domain that forwards to a different name (a directory, a parent) is never accepted.
+Housing co-ops, foundations, funds and names made only of generic words get no candidates. Switch off with
+`--no-discovery` or `DISCOVER_WEBSITES=0`. Files: `reports/discovery-200/`, sample `samples/nowebsite200.jsonl`.
+
+On 200 randomly drawn companies without a registered website (174 had a name that allows candidates):
+| | |
+|---|---|
+| websites found and verified | **12 (6.0%)**; 11 by organisation number or name + address in the snippet, 1 by name + street |
+| candidates tried that do not exist | ~400 of ~430 (a dead host costs one request) |
+| candidates refused | a few: another company, forwards elsewhere, name absent, robots.txt |
+| extra requests | about 3 per company without a website (run total 1,290 = 6.45/company with per-company register calls) |
+| facts on those 12 | description 7, email 12, phone 10, Facebook 3, dated activity 3, careers page 1 |
+| automated audit | 0 hard / 0 soft flags |
+
+A first run found one defect before this was recorded: a guessed domain that forwarded to a **directory page** about the
+company was accepted as its website (`vvseksperten.no/...`). Cross-domain forwarding is now rejected unless it is the
+same name with other hyphens/suffix (`ltsflyfishing.com` to `lts-flyfishing.com`, which carried the organisation number). All 12
+accepted sites were read against their identity snippet by hand; I found no wrong company, but 12 is a small number.
+
+What this means: in an official batch where ~89% of companies list no site, discovery roughly adds 5 percentage points of
+companies with web facts on top of the ~3.5% covered through registered sites (my estimate from this one sample).
+**Budget:** at ~3 requests per undiscovered-site company, a 1,500-company batch would need ~6,000 requests for discovery. The
+planner puts discovery after the cheaper tiers, so under the default 2,000-request limit only part of the batch is tried; if
+Builderr's real request limit is higher, raise `REQUEST_BUDGET_TOTAL`.

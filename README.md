@@ -66,7 +66,8 @@ Details: `DATA_SCHEMA.md`.
 2. **Website layer, fail-closed.** Only the website listed in the register is visited (robots.txt honoured, ≤7 requests,
    throttled). A page is accepted only if code finds the organisation number, or the legal name plus street address /
    postcode+city / registered phone. A different organisation number on the page vetoes it. Below 0.90 identity score
-   nothing from the web is published (`ambiguous`). ~89% of companies list no website: that path costs zero requests.
+   nothing from the web is published (`ambiguous`). ~89% of companies list no website: for those the agent tries domain names built from the legal name (candidates only,
+   accepted only on the organisation number or full name + exact street; `--no-discovery` turns it off).
    Contacts are attributed to the company's own address/name block on the page, never to a sister unit or the group.
    On a verified site the agent also looks for **hiring** (careers page: job postings, "no open positions", external
    portal link) and **dated activity** (RSS feed / news page), conservatively and with per-item evidence; a site that

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import re
 import urllib.parse
 from dataclasses import dataclass, field
 
@@ -200,6 +201,11 @@ def enrich_website(cs: ClaimSet, ident: CompanyIdentity, registry_website: str |
     return out
 
 
+def _label(url: str) -> str:
+    """Registered domain without its suffix or hyphens: nordvik-bygg.no and nordvikbygg.com are the same name."""
+    return re.sub(r"[^a-z0-9]", "", registered_domain(url).split(".")[0])
+
+
 def discover_website(cs: ClaimSet, ident: CompanyIdentity, fetcher: WebFetcher, llm: LlmClient | None = None, *,
                      hint: str | None = None, **kw) -> WebOutcome:
     """Companies without a registered website: try domain names built from the legal name (candidates only), probe each
@@ -225,6 +231,11 @@ def discover_website(cs: ClaimSet, ident: CompanyIdentity, fetcher: WebFetcher, 
         out.requests += home.requests
         if not home.ok:
             notes.append(f"{host} returned {home.error}")
+            continue
+        if _label(home.final_url) != _label(url):
+            # A guessed domain that forwards to another domain (a directory listing, a parent, a registrar page) is not
+            # evidence that the company runs that site.
+            notes.append(f"{host} redirects to {registered_domain(home.final_url)}")
             continue
         folded = fold(parse_page(home.final_url, home.html).corpus)
         if not plausibly_the_company(ident, folded):

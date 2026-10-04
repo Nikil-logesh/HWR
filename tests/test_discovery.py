@@ -49,7 +49,9 @@ def site_claim(cs):
 
 
 def test_candidates_are_built_from_the_legal_name_only():
-    assert candidate_urls("NORDVIK BYGG AS") == ["https://nordvikbygg.no/", "https://nordvik-bygg.no/", "https://nordvikbygg.com/"]
+    assert candidate_urls("NORDVIK BYGG AS") == ["https://nordvikbygg.no/", "https://nordvik-bygg.no/", "https://nordvik.no/",
+                                                  "https://nordvikbygg.com/"]
+    assert candidate_urls("NORDALEN LANDBRUKSSERVICE AS")[2] == "https://nordalen.no/"  # distinctive first word on its own
     assert candidate_urls("ÅSE & SØNN AS")[0] == "https://asesonn.no/"  # ASCII-folded
     assert candidate_urls("ARLEAL AS") == ["https://arleal.no/", "https://arleal.com/"]
 
@@ -67,7 +69,7 @@ def test_a_candidate_that_proves_identity_is_published_and_says_how_it_was_found
     assert c.confidence >= 0.95 and "not listed in the register" in c.note
     ev = next(e for e in cs.evidence if e.id == c.evidence_ids[0])
     assert ev.extraction_method.startswith("domain_candidate+identity_gate:")
-    assert not any("nordvik-bygg" in h or ".com" in h for h in hits)  # stops at the first proven candidate
+    assert not any("nordvik-bygg" in h or "nordvik.no" in h or ".com" in h for h in hits)  # stops at the first proven candidate
 
 
 def test_a_different_company_on_a_guessed_domain_is_not_published():
@@ -96,7 +98,7 @@ def test_a_candidate_that_never_mentions_the_company_costs_no_extra_pages():
 def test_nonexistent_domains_cost_one_request_each_and_end_as_not_available():
     cs, out, hits = run({})
     c = site_claim(cs)
-    assert c.availability == "not_available" and out.requests == 3 and len(hits) == 3
+    assert c.availability == "not_available" and out.requests == 4 and len(hits) == 4
     assert "unreachable" in c.note
 
 
@@ -116,3 +118,34 @@ def test_planner_spends_on_discovery_only_after_the_cheaper_tiers_and_only_for_d
 def test_plausibility_prefilter_uses_distinctive_words_or_the_org_number():
     assert plausibly_the_company(OUR, "velkommen til nordvik bygg") and not plausibly_the_company(OUR, "bygg og anlegg")
     assert plausibly_the_company(OUR, "org nr 910000012")
+
+
+def test_a_guessed_domain_that_forwards_elsewhere_is_never_the_company_site():  # real: a directory page for the company
+    def handler(req: httpx.Request):
+        if req.url.host == "nordvikbygg.no":
+            if req.url.path == "/robots.txt":
+                return httpx.Response(404)
+            return httpx.Response(302, headers={"location": "https://katalog.example/firma/nordvik-bygg-as"})
+        if req.url.path == "/robots.txt":
+            return httpx.Response(404)
+        if req.url.host == "katalog.example":
+            return httpx.Response(200, text=OURS, headers={"content-type": "text/html"})
+        raise httpx.ConnectError("no such host", request=req)
+    f = WebFetcher(Budget(200, 30), transport=httpx.MockTransport(handler), resolver=PUBLIC, sleeper=lambda s: None)
+    cs = ClaimSet()
+    out = discover_website(cs, OUR, f, None)
+    c = site_claim(cs)
+    assert c.availability == "not_available" and "redirects to katalog.example" in c.note and out.state == "not_available"
+
+
+def test_company_without_a_candidate_still_gets_an_explicit_not_available_claim():
+    from signalpost.web.enrich import enrich_website
+    cs = ClaimSet()
+    out = enrich_website(cs, OUR, None, WebFetcher(Budget(10, 5), resolver=PUBLIC), None)
+    assert out.state == "no_website" and site_claim(cs).availability == "not_available" and out.requests == 0
+
+
+def test_forwarding_to_the_same_name_with_hyphens_or_another_suffix_is_accepted():  # real: ltsflyfishing.com -> lts-flyfishing.com
+    from signalpost.web.enrich import _label
+    assert _label("https://lts-flyfishing.com/") == _label("https://ltsflyfishing.no/")
+    assert _label("https://katalog.example/x") != _label("https://nordvikbygg.no/")

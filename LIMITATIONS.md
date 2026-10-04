@@ -20,7 +20,7 @@
    so a job listing needs deadline/employment context, news items need a real visible date, external recruitment
    portals are only recorded as a link (never fetched), and a site that also names other organisation numbers (possible
    group site) yields `ambiguous`, not facts. JavaScript-rendered career pages are invisible to the static fetch. Companies
-   without a listed website (~89%) get neither. No search-engine, job-board, LinkedIn, Meta or review-site collection is
+   without a registered website get them only if domain-name discovery (guessed from the legal name) finds and proves a site. No search-engine, job-board, LinkedIn, Meta or review-site collection is
    performed (restricted platforms; search results are not evidence).
 4. **Group structure and annual-report PDF parsing are not implemented.** Financial history comes from the multi-year
    accounts response; filing-year lists are opt-in (rate-limited endpoint).
@@ -45,6 +45,14 @@
 * Date parsing is day-first for numeric dates (Norwegian). A site using month-first numeric dates would be misread.
 * Up to 3 extra requests per website company (careers, feed or news): a verified-website company now costs up to 7
   requests (planner estimate 7, +1 for the optional LLM).
+
+## Discovery limits
+* Only domains that can be guessed from the legal name are found (6% of random companies without a registered website in
+  the 200-company sample). Brands that differ from the legal name, `.org`/`.net`/other suffixes and marketplace pages are missed.
+* Guessing costs requests (~3 per company without a website, mostly for domains that do not exist). Under the default
+  2,000-request limit only part of a large batch is tried; the real limits are unpublished.
+* A site is accepted only with the organisation number or full legal name + exact street on it. A small business whose
+  site shows neither is not found. The result is unmeasured beyond the 12 sites read by hand.
 
 ## Source rights
 | source | use | terms |

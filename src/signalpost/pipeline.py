@@ -90,10 +90,10 @@ def register_envelope(org: str, client: ApiClient, *, run_id: str, universe_row:
         if fetcher is not None:
             website = next((x.value for x in cs.claims if x.field == "registry_website" and x.availability == "available"), None)
             ident = _identity(org, cs, universe_row)
-            if ident is not None and (website or discover):
+            if ident is not None:
                 llm_before = llm.thread_requests() if llm else 0
                 prior_sha = store.get_web_state(org)[0] if store else None
-                if website:
+                if website or not discover:  # no website and no discovery: enrich_website records "not_available", 0 requests
                     web = enrich_website(cs, ident, website, fetcher, llm, prior_sha=prior_sha, previous=previous)
                 else:
                     hint = _discovered_site(previous)

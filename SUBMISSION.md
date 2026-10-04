@@ -42,6 +42,7 @@ Environment variables (all optional): `REQUEST_BUDGET_TOTAL`, `REQUEST_BUDGET_PE
 | | requests | third-party cost |
 |---|---|---|
 | **Measured, 100 companies** (smoke test, no LLM, 10 of them list a website) | 343 (3.43 per company, p95 7, max 9), 52 s | $0 |
+| **Measured, 200 random companies without a registered website** (discovery on, no LLM) | 1,290 (6.45 per company incl. per-company register calls), 128 s; 12 sites discovered | $0 |
 | **Measured, 150 companies that all list a website** (real-website run, no LLM) | 1,146 (7.6 per company, max 15 = the per-company cap), 305 s | $0 |
 | **Measured, 1,500 companies** (bulk roles/workplaces/entity, no LLM) | 1,834 (1.22 per company), 288 s | $0 |
 | LLM add-on (not measured) | at most 1 call per company that lists a website (~11%): ~25k tokens per 100 companies | NVIDIA free tier: $0 (declared, unverified); Gemini Flash-Lite at the declared 0.10/0.40 USD per M tokens: ≈ $0.003 per 100 companies, ≈ $0.03 per 1,000 |

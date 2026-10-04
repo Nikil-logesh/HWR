@@ -27,7 +27,11 @@ locations and has no such block, no contact is published. Other-domain mailboxes
 organisation numbers are never contacts. Descriptions that are address blocks or contain markup are dropped.
 The LLM may only propose verbatim spans for description/services; it never sees financials and never decides identity.
 Social profiles are published only when linked from an identity-verified page AND the handle contains the legal name.
-No website in the register => `not_available`, zero requests, no search-based discovery.
+No website in the register => domain-name candidates built from the legal name are tried (`web/discover.py`, at most 4,
+robots + homepage each, dead hosts cost one request). A candidate is accepted only at score >= 0.95 (organisation number, or
+full legal name + exact street), must not forward to another domain name, and the claim says it was found this way
+(`domain_candidate+identity_gate:...`). Without candidates (co-ops, foundations, generic names) or without a match:
+`not_available`. No search-engine or directory lookups.
 
 ## Hiring and dated activity (`web/signals.py`, `web/signals_run.py`)
 Only after the website is verified, and only from pages on the same registered domain:
