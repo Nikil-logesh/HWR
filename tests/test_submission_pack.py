@@ -216,3 +216,26 @@ def test_escaped_quotes_and_malformed_rows_do_not_break_the_bulk_loader(tmp_path
     f2.write_text(out.getvalue().rstrip("\n") + ",EXTRA,CELLS\n", encoding="utf-8")
     assert load_registry_rows(f2, {"923609016"})["923609016"]["name"]
     assert csv_row_to_entity({"a": "1", None: ["x"], "b": None}) == {"a": "1"}
+
+
+def test_website_sample_and_web_report_scripts(tmp_path):
+    import importlib.util
+    import subprocess
+    import sys
+    csvp = ROOT / "tests" / "fixtures" / "recorded" / "bulk_rows.csv"
+    out = tmp_path / "s.jsonl"
+    r = subprocess.run([sys.executable, str(ROOT / "scripts" / "make_website_sample.py"), "--csv", str(csvp),
+                        "--count", "3", "--out", str(out)], capture_output=True, text=True, check=False)
+    assert r.returncode == 0, r.stderr
+    orgs = [json.loads(ln)["organisation_number"] for ln in out.read_text().splitlines()]
+    assert 1 <= len(orgs) <= 3 and all(len(o) == 9 for o in orgs)
+    envs = tmp_path / "e.jsonl"
+    envs.write_text(json.dumps(sample_envs()[0]) + "\n")
+    spec = importlib.util.spec_from_file_location("web_report", ROOT / "scripts" / "web_report.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    import sys as _s
+    _s.argv = ["web_report", "--profiles", str(envs), "--out", str(tmp_path / "r.md")]
+    assert mod.main() == 0
+    text = (tmp_path / "r.md").read_text()
+    assert "official_website outcome" in text and "identity signals" in text

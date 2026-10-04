@@ -203,11 +203,14 @@ def universe_names(path: str | Path, wanted: Iterable[str]) -> dict[str, str]:
     out: dict[str, str] = {}
     if not Path(path).exists():
         return out
-    for r in iter_rows(path):
-        if r["organisation_number"] in want:
-            out[r["organisation_number"]] = r["name"]
-            if len(out) == len(want):
-                break
+    try:
+        for r in iter_rows(path):
+            if r["organisation_number"] in want:
+                out[r["organisation_number"]] = r["name"]
+                if len(out) == len(want):
+                    break
+    except (RuntimeError, OSError, ValueError):  # Git LFS pointer / unreadable file: skip the optional name check
+        return {}
     return out
 
 

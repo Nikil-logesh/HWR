@@ -163,3 +163,9 @@ def test_sheet_shows_flags_next_to_the_company():
     flags = audit.audit_envelope(env)
     md, _ = audit.render_sheet([env], {ORG: flags})
     assert "**HARD flag** `low_identity_confidence`" in md
+
+
+def test_universe_names_survives_a_git_lfs_pointer(tmp_path):
+    ptr = tmp_path / "orgs.json"
+    ptr.write_text("version https://git-lfs.github.com/spec/v1\noid sha256:a\nsize 1\n")
+    assert audit.universe_names(ptr, ["910000012"]) == {}
