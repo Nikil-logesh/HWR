@@ -46,18 +46,18 @@ def test_org_number_and_phone_on_one_footer_line_keep_the_phone():
 def test_template_placeholder_and_noreply_emails_are_rejected():  # real: fornavn.etternavn@europress.no
     cs, drops = cands("<p>Kontakt: fornavn.etternavn@nordvik.example, noreply@nordvik.example, post@nordvik.example</p>")
     assert vals(cs, "contact_email") == ["post@nordvik.example"]
-    assert sum(d["reason"] == "placeholder or no-reply mailbox" for d in drops) == 2
+    assert sum(d["reason"] == "placeholder, no-reply or invoicing mailbox" for d in drops) == 2
 
 
 def test_email_on_another_business_domain_is_dropped_unless_next_to_the_company_name():
-    # real: receive@compello.com (invoice scanner) and faktura@bate.no (building manager) on someone else's site
-    cs, drops = cands("<p>Faktura sendes til receive@compello.com</p><p>Styret: faktura@bate.no</p>")
+    # real: receive@compello.com (invoice scanner) and a building manager's mailbox on someone else's site
+    cs, drops = cands("<p>Kvittering sendes til receive@compello.com</p><p>Styret: styret@bate.no</p>")
     assert vals(cs, "contact_email") == []
     assert all("not next to the company name" in d["reason"] for d in drops) and len(drops) == 2
     near, _ = cands("<p>Nordvik Bygg AS</p><p>Epost: kontakt@annet-domene.example</p>")
     assert vals(near, "contact_email") == ["kontakt@annet-domene.example"]
-    org_near, _ = cands("<p>Org.nr 910 000 012 – faktura@regnskap.example</p>")
-    assert vals(org_near, "contact_email") == ["faktura@regnskap.example"]
+    org_near, _ = cands("<p>Org.nr 910 000 012 – kontakt@regnskap.example</p>")
+    assert vals(org_near, "contact_email") == ["kontakt@regnskap.example"]
 
 
 def test_site_domain_and_freemail_are_accepted():
@@ -68,3 +68,30 @@ def test_site_domain_and_freemail_are_accepted():
 def test_email_verdict_unit():
     assert email_verdict("a@nordvik.example", "https://www.nordvik.example/x", "a@nordvik.example", NAME, ORG) is None
     assert email_verdict("test@nordvik.example", "https://nordvik.example/", "test@nordvik.example", NAME, ORG)
+
+
+def test_foreign_country_codes_are_never_published_as_norwegian_numbers():  # real: +46 Swedish and +45 Danish numbers
+    cs, drops = cands("<p>Tollfokus AB +46 10 27 67 600</p><p>Mobile: +45 29684865</p><p>Mobil +47 91 19 09 46</p>")
+    assert vals(cs, "contact_phone") == ["+47 91 19 09 46"]
+    assert any("foreign country code" in d["reason"] for d in drops)
+
+
+def test_plus_space_47_number_is_not_truncated():  # real: "+ 47 90 76 50 80" was published as "47 90 76 50"
+    cs, _ = cands("<p>Tlf kontor: + 47 90 76 50 80</p>")
+    assert vals(cs, "contact_phone") == ["+ 47 90 76 50 80"]
+
+
+def test_same_phone_in_two_formats_is_one_fact():  # real: "69891227" and "69 89 12 27" were both published
+    cs, _ = cands("<p>Telefon: 69 89 12 27</p><p>Ring 69891227 i dag</p>")
+    assert len(vals(cs, "contact_phone")) == 1
+
+
+def test_invoicing_mailboxes_are_not_contact_emails():  # real: invoicesAS@europress.no, Faktura@mortec.no
+    cs, drops = cands("<p>E-post: post@nordvik.example. Faktura: faktura@nordvik.example, invoicesAS@nordvik.example</p>")
+    assert vals(cs, "contact_email") == ["post@nordvik.example"]
+    assert len(drops) == 2
+
+
+def test_shared_mailboxes_come_before_personal_ones():  # real: three personal addresses crowded post@ out of the cap
+    cs, _ = cands("<p>lasse@nordvik.example magnus@nordvik.example post@nordvik.example</p>")
+    assert vals(cs, "contact_email")[0] == "post@nordvik.example"

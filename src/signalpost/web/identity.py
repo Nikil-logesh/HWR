@@ -21,6 +21,8 @@ LEGAL_FORMS = {"as", "asa", "ans", "da", "enk", "iks", "sa", "sam", "sti", "nuf"
                "spa", "stiftelsen", "stiftelse"}
 PARKED = ("domain is for sale", "domain for sale", "hugedomains", "this domain may be for sale",
           "buy this domain", "domene til salgs", "parked domain", "sedo domain parking")
+GROUP_LIST_LIMIT = 2
+ENTITY_BEFORE = re.compile(r"(?:\b(?:AS|ASA|SA|ANS|DA|KS|IKS|NUF|BA)|borettslag|sameie|stiftelse)\s*[:.,;|–-]?\s*$", re.IGNORECASE)
 ORG_NUM = re.compile(r"(?<!\d)(\d{3})[ . ]?(\d{3})[ . ]?(\d{3})(?!\d)")
 ORG_LABEL = re.compile(r"(org\.?\s?(nr|nummer|no)\b|organisasjonsnummer|organisation number|organization number|"
                        r"foretaksregisteret|\bnorway\s*(reg|no)|\bNO\b)", re.IGNORECASE)
@@ -103,15 +105,24 @@ def assess(ident: CompanyIdentity, pages: list[PageText]) -> IdentityResult:
     if any(m in low for m in PARKED):
         return IdentityResult(0.1, veto="parked or for-sale domain")
 
-    ours, foreign = None, None
+    ours, foreign, others = None, None, set()
     for m in ORG_NUM.finditer(text):
         digits = "".join(m.groups())
         if not valid_orgnr(digits):
             continue
         if digits == ident.org:
             ours = ours or m
-        elif ORG_LABEL.search(text[max(0, m.start() - 30): m.start()]):
-            foreign = foreign or digits
+        else:
+            before = text[max(0, m.start() - 30): m.start()]
+            labelled = bool(ORG_LABEL.search(before))
+            if labelled or ENTITY_BEFORE.search(before):  # an entity listing, not a stray number that happens to pass mod-11
+                others.add(digits)
+            if labelled:
+                foreign = foreign or digits
+    if ours and len(others) >= GROUP_LIST_LIMIT:
+        # a page that lists this number among several others is a group / portfolio / manager page, not the entity's own site
+        return IdentityResult(0.1, veto=f"page lists {len(others)} other organisation numbers (group or portfolio site)",
+                              foreign_org=min(others))
     if ours:
         return IdentityResult(1.0, ["organisation_number"], _context(text, ours.start(), ours.end()))
     if foreign:

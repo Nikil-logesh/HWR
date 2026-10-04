@@ -14,12 +14,18 @@ from .verify import Candidate
 
 EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 # Norwegian numbers: 8 digits as 2-2-2-2 or 3-2-3, optional +47/0047; single spaces only (dots made dates look like phones).
-PHONE = re.compile(r"(?<![\d@])(?<!\d[./-])(?:\+47 ?|0047 ?)?(?:\d{2} ?\d{2} ?\d{2} ?\d{2}|\d{3} ?\d{2} ?\d{3})(?!\d)(?![./-]\d)")
+# A "+" or a further digit group directly in front/behind means a longer or foreign number, never a Norwegian 8-digit one.
+PHONE = re.compile(r"(?<![\d@+])(?<!\d[./-])(?:\+ ?47 ?|0047 ?)?(?:\d{2} ?\d{2} ?\d{2} ?\d{2}|\d{3} ?\d{2} ?\d{3})(?!\d)(?![./-]\d)"
+                   r"(?! \d{2,3}(?!\d))")
+FOREIGN_PREFIX = re.compile(r"(?:\+|\b00)\s?\(?(\d{2,3})\)?\s?\(?0?\)?[\s.-]?$")
 NOT_PHONE_LABEL = re.compile(r"org\.?\s?(?:nr|nummer|no)|organisasjons|\bbank|\bkonto(?:nr|nummer)?\b|iban|swift|\bkid\b|\bmva\b|fødsels|postboks|"
                              r"faks|fax|kundenr|saksnr|ordrenr|fakturanr|ref\.?\s?nr", re.IGNORECASE)
 FAX = re.compile(r"\bfaks?\b|\bfax\b", re.IGNORECASE)
 BAD_LOCAL = re.compile(r"fornavn|etternavn|firstname|lastname|first\.last|dinepost|din\.epost|example|eksempel|"
-                       r"no-?reply|do-?not-?reply|^(name|navn|test|epost|mail|email|user|brukernavn|xxx+|din)$", re.IGNORECASE)
+                       r"no-?reply|do-?not-?reply|faktura|invoice|regnskap|billing|^(name|navn|test|epost|mail|email|user|brukernavn|xxx+|din)$",
+                       re.IGNORECASE)
+GENERIC_LOCAL = {"post", "info", "kontakt", "kontoret", "contact", "hello", "hei", "mail", "epost", "e-post", "firmapost",
+                 "office", "kundeservice", "support", "salg", "sales", "booking", "styret", "resepsjon", "admin"}
 FREEMAIL = {"gmail.com", "hotmail.com", "hotmail.no", "outlook.com", "outlook.no", "live.com", "live.no", "icloud.com",
             "me.com", "yahoo.com", "yahoo.no", "msn.com", "online.no", "broadpark.no", "getmail.no", "start.no",
             "frisurf.no", "c2i.net", "bbnett.no", "lyse.net", "altibox.no", "proton.me", "protonmail.com", "tele2.no",
@@ -47,7 +53,7 @@ def email_verdict(email: str, page_url: str, text: str, company_name: str, org: 
     local, _, domain = email.partition("@")
     domain = domain.lower()
     if BAD_LOCAL.search(local):
-        return "placeholder or no-reply mailbox"
+        return "placeholder, no-reply or invoicing mailbox"
     if domain in FREEMAIL or registered_domain(f"http://{domain}/") == registered_domain(page_url):
         return None
     block = fold(_block_around(text, email))
@@ -63,6 +69,9 @@ def phone_verdict(match: re.Match[str], text: str) -> str | None:
         return "looks like a date"
     ls = text.rfind("\n", 0, match.start()) + 1
     left = text[ls: match.start()][-28:]
+    foreign = FOREIGN_PREFIX.search(left)
+    if foreign and foreign.group(1) != "47":
+        return f"foreign country code +{foreign.group(1)}"
     if NOT_PHONE_LABEL.search(left):
         return "labelled as an organisation/bank/fax/reference number"
     return None
@@ -74,7 +83,8 @@ def deterministic_candidates(pages: list[PageText], company_name: str, org: str 
     seen: set[tuple[str, str]] = set()
 
     def add(c: Candidate) -> None:
-        key = (c.field, c.value.casefold())
+        # one phone number is one fact however it is spaced; the first (page-order) rendering is kept
+        key = (c.field, re.sub(r"\D", "", c.value)[-8:] if c.field == "contact_phone" else c.value.casefold())
         if key not in seen:
             seen.add(key)
             out.append(c)
@@ -88,7 +98,8 @@ def deterministic_candidates(pages: list[PageText], company_name: str, org: str 
         if desc and len(desc) >= 30:
             add(Candidate("website_description", desc, desc, pg.url, "meta_description"))
         emails = {m for m in pg.mailto if EMAIL.fullmatch(m)} | set(EMAIL.findall(pg.text))
-        for em in sorted(emails):
+        # shared mailboxes (post@, info@ ...) before personal ones: they are the company's contact, a named colleague is not
+        for em in sorted(emails, key=lambda e: (e.partition("@")[0].lower() not in GENERIC_LOCAL, e.lower())):
             ln = _line_with(pg.text, em)
             if not ln:
                 continue
