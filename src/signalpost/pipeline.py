@@ -11,7 +11,7 @@ from .httpcache import ApiClient, Fetched, utc_now
 from .models import Envelope, Operations, Run
 from .refresh import apply_refresh
 from .store import SnapshotStore
-from .web.enrich import enrich_website
+from .web.enrich import discover_website, enrich_website
 from .web.fetch import WebFetcher
 from .web.identity import CompanyIdentity
 from .web.llm import LlmClient
@@ -32,11 +32,28 @@ def _identity(org: str, cs: ClaimSet, row: dict[str, Any] | None) -> CompanyIden
                            city=addr.get("city"), municipality=muni, phone=c.get("phone") or c.get("mobile"))
 
 
+def cs_site(cs: ClaimSet) -> str | None:
+    return next((str(c.value) for c in cs.claims if c.field == "official_website" and c.availability == "available"), None)
+
+
+def _discovered_site(previous: Envelope | None) -> str | None:
+    """The website an earlier run found by domain candidate (re-checked directly instead of re-guessing)."""
+    if previous is None:
+        return None
+    ev = {e.id: e for e in previous.evidence}
+    for c in previous.claims:
+        if c.field == "official_website" and c.availability == "available" and any(
+                (ev.get(i) and (ev[i].extraction_method or "").startswith("domain_candidate")) for i in c.evidence_ids):
+            return str(c.value)
+    return None
+
+
 def register_envelope(org: str, client: ApiClient, *, run_id: str, universe_row: dict[str, Any] | None = None,
                       modules: tuple[str, ...] = DEFAULT_MODULES, fetcher: WebFetcher | None = None,
                       llm: LlmClient | None = None, store: SnapshotStore | None = None,
                       previous: Envelope | None = None, now: str | None = None,
-                      accounts_attempts: int | None = None, prefetched: dict[str, Fetched] | None = None) -> Envelope:
+                      accounts_attempts: int | None = None, prefetched: dict[str, Fetched] | None = None,
+                      discover: bool = False) -> Envelope:
     """`previous` (e.g. from --previous) overrides the store's latest snapshot. With a store, the new state is saved."""
     started, t0 = utc_now(), time.monotonic()
     if previous is None and store is not None:
@@ -73,10 +90,15 @@ def register_envelope(org: str, client: ApiClient, *, run_id: str, universe_row:
         if fetcher is not None:
             website = next((x.value for x in cs.claims if x.field == "registry_website" and x.availability == "available"), None)
             ident = _identity(org, cs, universe_row)
-            if ident is not None:
+            if ident is not None and (website or discover):
                 llm_before = llm.thread_requests() if llm else 0
                 prior_sha = store.get_web_state(org)[0] if store else None
-                web = enrich_website(cs, ident, website, fetcher, llm, prior_sha=prior_sha, previous=previous)
+                if website:
+                    web = enrich_website(cs, ident, website, fetcher, llm, prior_sha=prior_sha, previous=previous)
+                else:
+                    hint = _discovered_site(previous)
+                    web = discover_website(cs, ident, fetcher, llm, hint=hint, prior_sha=prior_sha, previous=previous)
+                    website = hint or (cs_site(cs) if web.state == "verified" else None)
                 if store and web.homepage_sha:
                     store.set_web_state(org, web.homepage_sha, website)
                 requests += web.requests + ((llm.thread_requests() - llm_before) if llm else 0)

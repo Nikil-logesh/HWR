@@ -72,7 +72,10 @@ def explain(env: Envelope, had_previous: bool = False) -> str:
     if web and web.availability == "available":
         ev = next((e for e in env.evidence if e.id == web.evidence_ids[0]), None)
         how = (ev.extraction_method or "").split(":")[-1].replace("+", " + ").replace("_", " ") if ev else "identity gate"
-        s3 = f"The website {web.value} was verified as belonging to this company ({how}; confidence {web.confidence:.2f})"
+        found = ("The register lists no website; " if ev and (ev.extraction_method or "").startswith("domain_candidate") else "")
+        found += "domain names built from the legal name were tried and " if found else ""
+        s3 = (f"{found}The website {web.value}" if not found else f"{found}{web.value}") + \
+            f" was verified as belonging to this company ({how}; confidence {web.confidence:.2f})"
         desc = val("website_description")
         s3 += f" and describes the business as “{desc[:160].rstrip()}”." if desc else "."
         if site_phone and reg_phone and _digits(site_phone) != _digits(reg_phone):

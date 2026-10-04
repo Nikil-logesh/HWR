@@ -7,13 +7,14 @@ from dataclasses import dataclass, field
 
 from ..claims import ClaimSet
 from ..models import Envelope
+from .discover import DISCOVERY_MIN_SCORE, candidate_urls, plausibly_the_company
 from .extract import deterministic_candidates, llm_candidates, llm_prompt
 from .fetch import Page, WebFetcher, registered_domain
 from .identity import CompanyIdentity, IdentityResult, assess
 from .llm import LlmClient
 from .safe import normalize_homepage
 from .signals_run import collect_and_publish
-from .text import PageText, lit, parse_page
+from .text import PageText, fold, lit, parse_page
 from .verify import verify
 
 SRC = "company_owned_website"
@@ -69,7 +70,10 @@ WEB_FIELDS = ("official_website", "website_description", "contact_email", "conta
 def enrich_website(cs: ClaimSet, ident: CompanyIdentity, registry_website: str | None, fetcher: WebFetcher,
                    llm: LlmClient | None = None, *, prior_sha: str | None = None,
                    previous: Envelope | None = None, capture: list[PageText] | None = None,
-                   today: dt.date | None = None) -> WebOutcome:
+                   today: dt.date | None = None, discovered: bool = False, min_score: float | None = None,
+                   home_page: Page | None = None) -> WebOutcome:
+    """discovered=True: `registry_website` is a candidate domain built from the legal name, not a register entry. It must
+    then reach `min_score` and the claim says how it was found. home_page: its already-fetched homepage (no refetch)."""
     url = normalize_homepage(registry_website)
     if not url:  # normal, fast path: zero requests
         cs.unavailable("official_website", "not_available", note="no website listed in the official register; "
@@ -82,8 +86,8 @@ def enrich_website(cs: ClaimSet, ident: CompanyIdentity, registry_website: str |
         cs.unavailable("official_website", "blocked", note="robots.txt disallows fetching the registered website")
         out.state = "blocked"
         return out
-    home = fetcher.page(url, ident.org)
-    out.requests += home.requests
+    home = home_page or fetcher.page(url, ident.org)
+    out.requests += 0 if home_page else home.requests
     if not home.ok and home.status == 0 and (home.error or "") in TRANSPORT_ERRORS:
         # The registered hostname does not connect: the register often lists "www.x.no" where only "x.no" answers
         # (or the reverse). Try the other form once, with its own robots check; costs at most 2 extra requests.
@@ -133,8 +137,12 @@ def enrich_website(cs: ClaimSet, ident: CompanyIdentity, registry_website: str |
     texts = [t for _, t in pages]
     res = assess(ident, texts)
     out.identity = res
-    if not res.publishable:
-        why = res.veto or f"identity score {res.score:.2f} below 0.90 (signals: {', '.join(res.signals) or 'none'})"
+    too_weak = discovered and min_score is not None and res.score < min_score and res.publishable
+    if not res.publishable or too_weak:
+        why = res.veto or f"identity score {res.score:.2f} below {min_score if too_weak else 0.90} " \
+                          f"(signals: {', '.join(res.signals) or 'none'})"
+        if discovered:
+            why += "; candidate domain built from the legal name, not listed in the register"
         cs.unavailable("official_website", "ambiguous", note=f"not published: {why}", source_url=home.final_url,
                        source_class=SRC, retrieved_at=home.retrieved_at, sha256=home.sha256, method="identity_gate")
         out.state = "ambiguous"
@@ -143,7 +151,10 @@ def enrich_website(cs: ClaimSet, ident: CompanyIdentity, registry_website: str |
     holder = next(((p, t) for p, t in pages if res.snippet and lit(res.snippet) in lit(t.corpus)), pages[0])
     cs.available("official_website", home.final_url, confidence=res.score, source_url=holder[0].final_url,
                  source_class=SRC, retrieved_at=holder[0].retrieved_at, sha256=holder[0].sha256,
-                 span=res.snippet or ident.name, method="identity_gate:" + "+".join(res.signals))
+                 span=res.snippet or ident.name,
+                 method=("domain_candidate+" if discovered else "") + "identity_gate:" + "+".join(res.signals),
+                 note="not listed in the register; found by trying domain names built from the legal name and "
+                      "proven by the identity gate" if discovered else None)
     out.state = "verified"
     if capture is not None:  # model benchmark: the identity-verified pages exactly as the LLM would see them
         capture.extend(texts)
@@ -186,4 +197,43 @@ def enrich_website(cs: ClaimSet, ident: CompanyIdentity, registry_website: str |
         out.published += 1
     collect_and_publish(cs, ident, home, pages, fetcher, out, res.score, today or _today(),
                         homepage_only=allowed is None)
+    return out
+
+
+def discover_website(cs: ClaimSet, ident: CompanyIdentity, fetcher: WebFetcher, llm: LlmClient | None = None, *,
+                     hint: str | None = None, **kw) -> WebOutcome:
+    """Companies without a registered website: try domain names built from the legal name (candidates only), probe each
+    cheaply (robots + homepage), and run the full gate on the first plausible one. hint = the site found on an earlier run."""
+    urls = [hint] if hint else candidate_urls(ident.name)
+    if not urls:
+        cs.unavailable("official_website", "not_available", note="no website listed in the official register; no domain "
+                       "candidate can be built from this legal name")
+        return WebOutcome("no_website")
+    out = WebOutcome("not_available")
+    notes: list[str] = []
+    for url in urls:
+        host = urllib.parse.urlparse(url).netloc
+        allowed, used = fetcher.robots_allows(url, ident.org)
+        out.requests += used
+        if fetcher.host_unreachable(url):
+            notes.append(f"{host} does not exist or is unreachable")
+            continue
+        if allowed is False:
+            notes.append(f"{host} disallows fetching (robots.txt)")
+            continue
+        home = fetcher.page(url, ident.org)
+        out.requests += home.requests
+        if not home.ok:
+            notes.append(f"{host} returned {home.error}")
+            continue
+        folded = fold(parse_page(home.final_url, home.html).corpus)
+        if not plausibly_the_company(ident, folded):
+            notes.append(f"{host} does not mention the company")
+            continue
+        sub = enrich_website(cs, ident, url, fetcher, llm, discovered=True, min_score=DISCOVERY_MIN_SCORE,
+                             home_page=home, **kw)
+        sub.requests += out.requests
+        return sub
+    cs.unavailable("official_website", "not_available", note="no website listed in the official register; domain names "
+                   f"built from the legal name were tried without result ({'; '.join(notes)[:300]})")
     return out

@@ -22,6 +22,7 @@ from .planner import Company, Plan, plan_batch, summarize
 from .runner import build_report, read_previous, render_report, run_planned_batch
 from .store import SnapshotStore
 from .validate import validate_file
+from .web.discover import worth_trying
 from .web.fetch import WebFetcher
 from .web.llm import LlmClient, providers_from_env
 
@@ -65,6 +66,9 @@ def main(argv: list[str] | None = None) -> int:
                         "(auto: from BULK_THRESHOLD companies upward)")
     r.add_argument("--no-web", action="store_true", help="register-only run")
     r.add_argument("--no-llm", action="store_true", help="deterministic web extraction only")
+    r.add_argument("--no-discovery", action="store_true",
+                   help="do not try domain names built from the legal name for companies without a registered website "
+                        "(also: DISCOVER_WEBSITES=0)")
     r.add_argument("--quiet", action="store_true")
     a = ap.parse_args(argv)
 
@@ -103,6 +107,7 @@ def main(argv: list[str] | None = None) -> int:
         signal.signal(sig, lambda *_: budget.expire())
     client = ApiClient(budget=budget)
     fetcher = None if a.no_web else (WebFetcher(budget, cache_dir=a.page_cache) if a.page_cache else WebFetcher(budget))
+    discovery = not a.no_discovery and os.environ.get("DISCOVER_WEBSITES", "1") not in ("0", "false", "no")
     providers = [] if (a.no_web or a.no_llm) else providers_from_env()
     llm = LlmClient(providers, budget, timeout=float(os.environ.get("LLM_TIMEOUT_SECONDS", "90") or 90)) if providers else None
     fixed = tuple(m for m in a.modules.split(",") if m) if a.modules else None
@@ -131,14 +136,17 @@ def main(argv: list[str] | None = None) -> int:
         if fixed is not None:
             return {i.org: Plan(modules=list(fixed), web=True) for i in pending}
         cos = [Company(i.org, bool((rows.get(i.org) or {}).get("website")) and fetcher is not None,
-                       (rows.get(i.org) or {}).get("industry_code", ""), frozenset(prefetched.get(i.org, {})))
+                       (rows.get(i.org) or {}).get("industry_code", ""), frozenset(prefetched.get(i.org, {})),
+                       discoverable=discovery and fetcher is not None and not (rows.get(i.org) or {}).get("website")
+                       and worth_trying((rows.get(i.org) or {}).get("name", "")))
                for i in pending]
         return plan_batch(cos, budget.remaining_total, s.request_budget_per_company, llm=llm is not None)
 
     def make(row, plan):
         plan = plan or Plan(modules=list(DEFAULT_MODULES), web=True)
         return register_envelope(row.org, client, run_id=run_id, universe_row=rows.get(row.org),
-                                 modules=tuple(plan.modules), fetcher=fetcher if plan.web else None, llm=llm,
+                                 modules=tuple(plan.modules), fetcher=fetcher if (plan.web or plan.discover) else None, llm=llm,
+                                 discover=plan.discover,
                                  store=store, previous=prev.get(row.org), accounts_attempts=plan.accounts_attempts,
                                  prefetched=prefetched.get(row.org))
 

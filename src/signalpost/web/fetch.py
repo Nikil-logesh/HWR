@@ -66,6 +66,7 @@ class WebFetcher:
                                   headers={"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml"})
         self._last: dict[str, float] = {}
         self._robots: dict[str, urllib.robotparser.RobotFileParser | None] = {}
+        self._unreachable: set[str] = set()
         self._lock = threading.Lock()
 
     def _throttle(self, host: str) -> None:
@@ -139,6 +140,10 @@ class WebFetcher:
         return httpx.Response(meta["status"], headers=meta["headers"], content=body,
                               request=httpx.Request("GET", url))
 
+    def host_unreachable(self, url: str) -> bool:
+        """True when the robots.txt request to this host failed at transport level (call after robots_allows)."""
+        return urllib.parse.urlparse(url).netloc.lower() in self._unreachable
+
     def robots_allows(self, url: str, org: str) -> tuple[bool | None, int]:
         """(allowed, requests). allowed=None means robots.txt was unreachable (callers go homepage-only)."""
         p = urllib.parse.urlparse(url)
@@ -147,6 +152,8 @@ class WebFetcher:
             rp = self._robots[host]
             return (None if rp is None else rp.can_fetch(UA_TOKEN, url)), 0
         resp, _, used, _err = self._get(f"{p.scheme}://{host}/robots.txt", org)
+        if resp is None and _err and not _err.startswith(("unsafe", "budget")):
+            self._unreachable.add(host)  # transport failure (no DNS / refused / timeout): the host is not there
         if resp is None or resp.status_code >= 500:
             self._robots[host] = None
             return None, used
