@@ -52,11 +52,11 @@ Website requests (≤7 per website incl. careers/news/feed, throttled) were **no
 | Requirement | Status | Evidence |
 |---|---|---|
 | No fabricated financial values | **Met by construction** | values only from Regnskapsregisteret numbers (`accounts.py`); test compares every published value with the raw filing for 12 real companies; validator rejects any financial claim not from the official API; LLM never sees financials |
-| No material wrong-company publication | **Designed + tested on synthetic pages; NOT verified live** | identity gate (`IDENTITY_RESOLUTION.md`), verifier, fail-closed; `make audit` found 0 hard flags in 1,500 profiles, but those contain no web facts (sandbox could not reach websites) |
+| No material wrong-company publication | **Designed; run on 150 real sites; hand review found and fixed defects; residual risk on chain/group sites** | identity gate (`IDENTITY_RESOLUTION.md`), verifier, fail-closed; `make audit`: 0 hard flags in 1,500 register-only profiles and 0 in 150 real-website profiles, but the automated audit missed every defect the hand review found (`REAL_WEB_FINDINGS.md`) |
 | 100-company smoke-test result in the public artifact | Met | `reports/smoke-test-100/` |
 | Exactly one terminal envelope per input | Met | 100/100 and 1,500/1,500; invalid ids and crashes still get a `failed` envelope; cutoff writes placeholders (`tests/test_budget_control.py`) |
 | Claim-level source, retrieval time, reporting period | Met | `signalpost.validate` runs in every run (`report.json › contract_validation`) |
-| Honest availability states, never zero | Met | six states; missing omitted; real 0 kept; hiring / dated activity come only from a verified company site (heuristic, **never run on a real site**); profiles without one say they were not collected |
+| Honest availability states, never zero | Met | six states; missing omitted; real 0 kept; hiring / dated activity come only from a verified company site (real sample: 8 careers pages, 0 recognised listings, 8 dated feeds); profiles without one say they were not collected |
 | Idempotent refresh, prior snapshots preserved | Met on replays and live reruns | `REFRESH.md`; refresh run: 0 changes, identical results; no duplicate snapshot rows |
 | Reproducible setup, pinned deps, one evaluator command | Met | `uv.lock`; fresh-clone check recorded below |
 | Declared source rights, server-side secrets, safe URL handling | Met | `LIMITATIONS.md` (key-leak test, SSRF guard, robots.txt) |
@@ -66,13 +66,14 @@ Website requests (≤7 per website incl. careers/news/feed, throttled) were **no
 ## Open items (cannot be closed inside this sandbox)
 1. **Envelope shape:** we follow `kit/OUTPUT_CONTRACT.md`; the kit's reference runner emits a different legacy shape.
    Ask Builderr which one the evaluator reads (and whether a validator exists).
-2. **Web layer on real sites:** run a batch where websites are reachable and audit it (`make batch` + `make audit`).
-3. **LLM choice:** benchmarked on a proxy corpus only; re-run with `--source web` once websites are reachable, and
+2. **Web layer on more real sites:** one 150-site sample is done (`REAL_WEB_FINDINGS.md`); a second, differently drawn sample
+   (including companies whose site is a chain/group page) would show whether other defect classes exist.
+3. **LLM choice:** benchmarked on a proxy corpus only; re-run with `--source web` (websites are reachable now), and
    measure Gemini Flash-Lite (needs a Google key) and re-test DeepSeek.
 4. **Official time / request / cost budgets** are unpublished; confirm them, or the defaults above apply.
 5. **Hiring and dated activity** are extracted only from the company's own verified website (careers page, RSS feed / news
-   page) by conservative heuristics that have never run on a real site; ~89% of companies list no website, so they get
-   neither. Audit a real-website batch before relying on it (`AUDIT.md`).
+   page) by conservative heuristics; on the real sample they found no job listing and 8 dated feeds. ~89% of companies list no
+   website, so they get neither.
 6. **Revisions:** up to four more commit hashes may be submitted before 18 Oct 2026 (five versions total); each revision
    is frozen before its next official run.
 

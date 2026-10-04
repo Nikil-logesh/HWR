@@ -5,17 +5,26 @@ candidate until a page proves it belongs to that exact entity. The score is comp
 
 | Score | Evidence on fetched pages | Publishable |
 |---|---|---|
-| 1.00 | exact organisation number (mod-11 valid, any spacing) | yes |
+| 1.00 | exact organisation number (mod-11 valid, any spacing) and the registered name on the page | yes |
+| 0.95 | exact organisation number but the registered name appears nowhere (signal `legal_name_not_on_page`) | yes |
 | 0.95 | full legal name + exact street address | yes |
 | 0.92 | full legal name + postcode and city together, or the registered phone number | yes |
+| 0.90 | a distinctive word of the legal name (trade name differs) + exact street *with house number* + postcode and city together | yes |
 | 0.70 | legal name + municipality only | no |
 | 0.50 | legal name only | no |
 
-Vetoes: the page gives a *different* valid organisation number as the company's own; parked / for-sale domain.
+Vetoes: the page gives a *different* valid organisation number as the company's own; the page lists two or more other
+entity-labelled organisation numbers next to ours (group / portfolio page, not an exact match); parked / for-sale domain.
 Threshold 0.90. Below it: `official_website` is `ambiguous`, and NO web fact is published (register-only output).
 
 Web facts (description, services, email, phone, social links) are published only after the literal-snippet
 verifier: the snippet must occur in the fetched page and must contain the value (`web/verify.py`).
+Whose contact is it? (`web/extract.py`, added after the first real-site run, see `REAL_WEB_FINDINGS.md`): a phone or
+mailbox is attributed to the unit block that precedes it (the company's full legal name, street, postcode or organisation
+number). If a page has a block for this company only the contacts in it are published; if a page lists several other
+locations and has no such block, no contact is published. Other-domain mailboxes need the company's name in the domain
+(home TLDs only) or in the same text block; foreign country codes, template/no-reply/invoicing mailboxes, dates, bank and
+organisation numbers are never contacts. Descriptions that are address blocks or contain markup are dropped.
 The LLM may only propose verbatim spans for description/services; it never sees financials and never decides identity.
 Social profiles are published only when linked from an identity-verified page AND the handle contains the legal name.
 No website in the register => `not_available`, zero requests, no search-based discovery.

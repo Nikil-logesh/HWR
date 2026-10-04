@@ -1,17 +1,20 @@
 # Limitations, source rights, secrets and URL safety
 
 ## Known limitations (read before trusting a number)
-1. **The web layer has never run against real websites.** The build sandbox could not reach company sites. It is tested
-   with synthetic pages and mocked networks only (identity gate, verifier, robots, SSRF, budgets). How often the gate
-   verifies a real site, and whether it ever verifies a wrong one, is unmeasured. A batch run with website access must be
-   audited (`make audit`, `AUDIT.md`) before it is trusted. The most likely real-world effect is lower coverage (the gate
-   is strict: it needs the organisation number, or legal name plus street address, postcode and city, or registered phone).
+1. **The web layer has run on one real sample of 150 websites, not more.** (`REAL_WEB_FINDINGS.md`, `reports/real-web-150/`.)
+   48 sites were verified; hand review of their facts found precision defects that the automated audit (0 flags) could
+   not see; they were fixed and have regression tests. That sample was chosen from companies that list a website, so its
+   coverage figures are not representative of an official batch, there is no error bar, and a different sample may show
+   defects not seen here. Some chain/association/group sites still pass the gate (the company's own name and address
+   appear on them); the contacts are restricted to the company's own block but the residual risk is not zero. Some fetch
+   failures (`ProxyError`, plain `http://` refused with 403) may be specific to the build sandbox.
 2. **LLM benchmarked only on a proxy corpus.** `BENCHMARK.md` has real results for three NVIDIA-hosted models on real
    Norwegian company text in synthetic page boilerplate, not on real websites; Gemini Flash-Lite and DeepSeek were not
    measured (no key / timeouts). Only one model met the thresholds (gemma-4-31b-it, borderline on failures). The pipeline
    works without any LLM (deterministic extraction).
-3. **Hiring and dated activity are collected only from the company's own verified website, with heuristics that have
-   never been run on a real site** (see `IDENTITY_RESOLUTION.md`). Recall will be low by design: precision comes first,
+3. **Hiring and dated activity are collected only from the company's own verified website.** On the 150-site sample:
+   8 careers pages, **0 recognised job listings**, 1 "no open positions" statement, 8 sites with dated feed activity;
+   the job-listing heuristics have therefore **never recognised a real posting** (see `IDENTITY_RESOLUTION.md`). Recall will be low by design: precision comes first,
    so a job listing needs deadline/employment context, news items need a real visible date, external recruitment
    portals are only recorded as a link (never fetched), and a site that also names other organisation numbers (possible
    group site) yields `ambiguous`, not facts. JavaScript-rendered career pages are invisible to the static fetch. Companies
@@ -51,7 +54,9 @@
 
 Not used: LinkedIn, Facebook/Instagram, Google/Bing result pages, Glassdoor, Indeed, search APIs, directories.
 Person data: role holders' names and roles are public register data and are shown; birth dates and death flags are
-never read or stored (scrubbed from recorded fixtures too).
+never read or stored (scrubbed from recorded fixtures too). Contact mailboxes/phones are taken from the company's own
+registered website; shared mailboxes (post@, info@ ...) come first and at most 3 emails / 2 phones are kept, but a named
+colleague's work address can still appear when the site shows it in the company's own block.
 
 ## Dependencies and licences (pinned in `uv.lock`; read from installed package metadata)
 beautifulsoup4 4.15.0 (MIT), extruct 0.18.0 (BSD), httpx 0.28.1 (BSD-3-Clause), lxml 6.1.3 (BSD-3-Clause),

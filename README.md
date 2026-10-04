@@ -67,6 +67,7 @@ Details: `DATA_SCHEMA.md`.
    throttled). A page is accepted only if code finds the organisation number, or the legal name plus street address /
    postcode+city / registered phone. A different organisation number on the page vetoes it. Below 0.90 identity score
    nothing from the web is published (`ambiguous`). ~89% of companies list no website: that path costs zero requests.
+   Contacts are attributed to the company's own address/name block on the page, never to a sister unit or the group.
    On a verified site the agent also looks for **hiring** (careers page: job postings, "no open positions", external
    portal link) and **dated activity** (RSS feed / news page), conservatively and with per-item evidence; a site that
    names other organisation numbers is treated as a possible group site and yields nothing.
@@ -81,7 +82,7 @@ Details: `DATA_SCHEMA.md`.
 
 ## Verify it
 ```bash
-make test                                   # 214 tests, no network needed
+make test                                   # 273 tests, no network needed
 make bench                                  # 100-company daily-test benchmark vs time/request/cost limits (live Brreg)
 make batch BULK=brreg-enheter.csv.gz && make audit   # 1,500 seeded profiles + wrong-company audit + 50-profile review sheet
 uv run python scripts/model_benchmark.py --help      # LLM benchmark (needs keys)
@@ -94,13 +95,15 @@ uv run python scripts/model_benchmark.py --help      # LLM benchmark (needs keys
 The limits are our own safety defaults; the official budgets are not published.
 
 ## Limitations (important)
-The web layer has not been run against real websites, the LLM benchmark used a proxy corpus (see BENCHMARK.md), and
-hiring / dated-activity extraction (new) has never run on a real website. See **LIMITATIONS.md** for the full list, source rights, secrets and URL-safety declarations.
+The web layer has run on one sample of **150 real websites** (48 verified, 68 refused as ambiguous, 28 unreachable,
+4 blocked by robots.txt; hand review found and fixed precision defects, `REAL_WEB_FINDINGS.md`), the LLM benchmark used a
+proxy corpus (`BENCHMARK.md`), and the hiring extractor has not yet recognised a real job posting (0 in that sample).
+See **LIMITATIONS.md** for the full list, source rights, secrets and URL-safety declarations.
 
 ## Repository map
 `run_agent.py` entry point · `src/signalpost/` (`pipeline`, `register`, `accounts`, `bulk`, `planner`, `refresh`,
 `store`, `explain`, `audit`, `htmlreport`, `web/` identity·fetch·verify·llm·signals) · `scripts/` (benchmarks, audit, fixture
-recorder) · `tests/` (214 tests; real recorded Brreg fixtures + synthetic edge cases) · `samples/` (seeded samples) ·
+recorder) · `tests/` (273 tests; real recorded Brreg fixtures + synthetic edge cases) · `samples/` (seeded samples) ·
 `kit/` (Builderr starter kit, untouched).
 Docs: `ARCHITECTURE.md`, `DATA_SCHEMA.md`, `IDENTITY_RESOLUTION.md`, `REFRESH.md`, `BUDGET.md`, `AUDIT.md`,
-`BENCHMARK.md`, `LIMITATIONS.md`, `SUBMISSION.md`.
+`BENCHMARK.md`, `REAL_WEB_FINDINGS.md`, `LIMITATIONS.md`, `SUBMISSION.md`.
