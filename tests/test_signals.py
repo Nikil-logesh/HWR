@@ -101,6 +101,12 @@ def test_discover_links_prefers_shallow_same_site_and_recognises_portals():
     assert s.feed_urls == ["https://nordvik.example/feed.xml"]
 
 
+def test_bli_med_in_an_article_slug_is_not_a_careers_link():  # real: a coaching-course article "...fotballtrener-bli-med-pa-den-blaa-treneren"
+    anchors = [("https://nordvik.example/nyheter/vil-du-bli-trener-bli-med-pa-kurs", "Bli med på kurs"),
+               ("https://nordvik.example/bli-med-oss", "Bli med oss")]
+    assert sg.discover_links("https://nordvik.example/", anchors, []).careers_urls == ["https://nordvik.example/bli-med-oss"]
+
+
 def test_how_we_work_is_not_a_careers_link():  # real: /news/slikjobbervi ("Slik jobber vi" = how we work) was a careers page
     anchors = [("https://nordvik.example/news/slikjobbervi", "Slik jobber vi"), ("https://nordvik.example/jobbe-hos-oss", "Jobbe hos oss?")]
     assert sg.discover_links("https://nordvik.example/", anchors, []).careers_urls == ["https://nordvik.example/jobbe-hos-oss"]

@@ -41,11 +41,13 @@ Environment variables (all optional): `REQUEST_BUDGET_TOTAL`, `REQUEST_BUDGET_PE
 ## Expected cost
 | | requests | third-party cost |
 |---|---|---|
-| **Measured, 100 companies** (smoke test, no LLM) | 320 (3.2 per company, max 5) | $0 |
+| **Measured, 100 companies** (smoke test, no LLM, 10 of them list a website) | 343 (3.43 per company, p95 7, max 9), 52 s | $0 |
+| **Measured, 150 companies that all list a website** (real-website run, no LLM) | 1,146 (7.6 per company, max 15 = the per-company cap), 305 s | $0 |
 | **Measured, 1,500 companies** (bulk roles/workplaces/entity, no LLM) | 1,834 (1.22 per company), 288 s | $0 |
 | LLM add-on (not measured) | at most 1 call per company that lists a website (~11%): ~25k tokens per 100 companies | NVIDIA free tier: $0 (declared, unverified); Gemini Flash-Lite at the declared 0.10/0.40 USD per M tokens: ≈ $0.003 per 100 companies, ≈ $0.03 per 1,000 |
 
-Website requests (≤7 per website incl. careers/news/feed, throttled) were **not** exercised live; the planner budgets 7–8 per website-listing company
+Website requests (≤7 per website incl. careers/news/feed, plus a retry on the other `www.` form, throttled 1 s per domain) were exercised live
+on the 150-site run above: 7.6 requests per website-listing company on average. The planner budgets 7–8 per such company
 (about 11% of companies). Official limits are unpublished: our defaults are 45 min / 2,000 requests / $10, configurable.
 
 ## Checklist against RULES.md "Official-run checks" and the kit's submission contract
