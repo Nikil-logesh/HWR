@@ -82,3 +82,32 @@ Strictness is the main cost: 68 ambiguous sites. About 55 of them looked like co
 (manager/chain/group sites naming other organisations; pages with no trace of the company); about 4 were clear false
 negatives (the new tier verifies 2 sites in this sample); the rest were unclear. I did **not** loosen the gate to chase
 the recall number, because RULES.md ranks a wrong-company publication above a missing fact.
+
+## With the LLM on (same 150 sites, same recorded pages, 2026-10-04)
+`google/gemma-4-31b-it` on the NVIDIA free tier (the only model that met the benchmark thresholds), JSON mode, verbatim
+spans only, every snippet checked by code. Result files: `reports/real-web-150-llm/`.
+
+| | no LLM | LLM |
+|---|---|---|
+| verified sites / identity decisions | 48 | 48 (the LLM never decides identity; unchanged) |
+| `website_description` | 27 | **45** |
+| `products_services` | 0 | **44** |
+| LLM calls / failures | 0 | 48 / 1 |
+| tokens (prompt / completion) | 0 | 73,264 / 10,649 |
+| wall clock for the 150 | 66 s (replay) | **638 s** |
+| third-party cost | $0 | $0 (free tier, declared) |
+
+I read all 62 LLM-published facts against their snippets. All are literal page text and about the right entity. Weak spots:
+* **Chain pages:** `SKEISBOTNEN BARNEHAGE AS` gets the Pioner chain's sustainability sentence as its description and the
+  four kindergartens' names as "services". The page is the chain's; the text is not specific to this company.
+* **Low-value services:** `RESIDENTIAL`/`COMMERCIAL` (Krista Hartmann), department names as services (Brøttet Barnehage),
+  events (Kongsberg Jazzfestival), job titles (Blokksberg). Not wrong, but not what a reader wants.
+* The audit raised one soft flag (`MD INTERIØRPROSJEKT`): the snippet has line breaks where the value has spaces; the
+  verifier compares whitespace-normalised text. Benign.
+
+**Latency is the real cost.** The free tier took 40-65 s per call on this day (the earlier proxy-corpus benchmark saw ~14 s),
+so the old 40 s timeout failed every call. The timeout is now `LLM_TIMEOUT_SECONDS` (default 90). At 8 workers, about 11%
+of an official batch listing a website, a 1,000-company batch would spend roughly 10 minutes in LLM calls; the wall-clock
+deadline and request budget still apply, and a failed or slow call just leaves description/services out.
+The injection risk measured in `BENCHMARK.md` is unchanged: the verifier stops text that is not on the page, not text that
+is on the page and hostile.

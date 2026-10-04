@@ -1,0 +1,125 @@
+{
+ "available_facts_total": 4462,
+ "carried_forward_facts": 0,
+ "changes_total": 0,
+ "companies_input": 150,
+ "companies_with_changes": 0,
+ "completed_at": "2026-10-04T15:52:16.866146Z",
+ "contract_validation": {
+  "checks": {
+   "exactly_one_envelope_per_input": true,
+   "unique_organisation_numbers": true
+  },
+  "envelopes": 150,
+  "passed": false,
+  "problems": [
+   "991184465: website_description: evidence snippet does not contain the value"
+  ]
+ },
+ "control": {
+  "budget_exhausted": false,
+  "bulk": {
+   "mode": "auto"
+  },
+  "chunks": 7,
+  "cutoff_triggered": false,
+  "initial_plan_estimate": {
+   "entity": 150,
+   "estimated_requests": 1650.0,
+   "estimated_requests_per_company": 11.0,
+   "financials": 150,
+   "roles": 150,
+   "subunits": 150,
+   "web": 150
+  },
+  "placeholders_due_to_cutoff": 0,
+  "replans": 7
+ },
+ "coverage_companies_with_field": {
+  "careers_page": 8,
+  "contact_email_1": 40,
+  "contact_phone_1": 45,
+  "employees": 40,
+  "financials.revenue": 138,
+  "financials.total_assets": 149,
+  "hiring_status": 1,
+  "latest_activity_date": 8,
+  "legal_name": 150,
+  "nace": 150,
+  "official_website": 48,
+  "open_positions": 0,
+  "public_activity": 8,
+  "registered_address": 149,
+  "registry_website": 150,
+  "roles": 150,
+  "social_facebook": 11,
+  "social_linkedin": 8,
+  "status": 150,
+  "website_description": 45,
+  "workplaces": 134
+ },
+ "coverage_pct": {
+  "careers_page": 5.3,
+  "contact_email_1": 26.7,
+  "contact_phone_1": 30.0,
+  "employees": 26.7,
+  "financials.revenue": 92.0,
+  "financials.total_assets": 99.3,
+  "hiring_status": 0.7,
+  "latest_activity_date": 5.3,
+  "legal_name": 100.0,
+  "nace": 100.0,
+  "official_website": 32.0,
+  "open_positions": 0.0,
+  "public_activity": 5.3,
+  "registered_address": 99.3,
+  "registry_website": 100.0,
+  "roles": 100.0,
+  "social_facebook": 7.3,
+  "social_linkedin": 5.3,
+  "status": 100.0,
+  "website_description": 30.0,
+  "workplaces": 89.3
+ },
+ "dropped_web_facts": 212,
+ "envelopes_written": 150,
+ "exactly_one_envelope_per_input": true,
+ "mean_facts_per_company": 29.75,
+ "operations": {
+  "company_runtime_ms_p50": 1765,
+  "company_runtime_ms_p95": 72874,
+  "llm": {
+   "by_provider": {
+    "primary": 48
+   },
+   "completion_tokens": 10649,
+   "failures": 1,
+   "prompt_tokens": 73264,
+   "requests": 48
+  },
+  "requests_per_company_max": 15,
+  "requests_per_company_mean": 7.95,
+  "requests_per_company_p95": 12,
+  "requests_total_budgeted": 1193,
+  "requests_total_envelopes": 1193,
+  "third_party_cost_usd": 0.0,
+  "wall_clock_seconds": 638.35
+ },
+ "run_id": "web150llm",
+ "settings": {
+  "cutoff_margin_seconds": 90,
+  "llm_providers": [
+   "primary"
+  ],
+  "request_budget_per_company": 15,
+  "request_budget_total": 2000,
+  "wall_clock_seconds": 2700,
+  "web": true,
+  "workers": 8
+ },
+ "started_at": "2026-10-04T15:41:59.744644Z",
+ "terminal_status_counts": {
+  "completed": 149,
+  "partial": 1
+ }
+}

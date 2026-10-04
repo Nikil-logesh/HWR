@@ -11,7 +11,9 @@
 2. **LLM benchmarked only on a proxy corpus.** `BENCHMARK.md` has real results for three NVIDIA-hosted models on real
    Norwegian company text in synthetic page boilerplate, not on real websites; Gemini Flash-Lite and DeepSeek were not
    measured (no key / timeouts). Only one model met the thresholds (gemma-4-31b-it, borderline on failures). The pipeline
-   works without any LLM (deterministic extraction).
+   works without any LLM (deterministic extraction). On 150 real sites the LLM (gemma-4-31b-it, free tier) raised descriptions
+   from 27 to 45 and services from 0 to 44 sites at ~45 s per call (`REAL_WEB_FINDINGS.md`); chain-page text can be attributed
+   to a member company, and the free tier's latency varies a lot.
 3. **Hiring and dated activity are collected only from the company's own verified website.** On the 150-site sample:
    8 careers pages, **0 recognised job listings**, 1 "no open positions" statement, 8 sites with dated feed activity;
    the job-listing heuristics have therefore **never recognised a real posting** (see `IDENTITY_RESOLUTION.md`). Recall will be low by design: precision comes first,
