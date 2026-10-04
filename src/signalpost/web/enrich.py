@@ -49,6 +49,15 @@ def _secondary_urls(home: Page, pt: PageText) -> list[str]:
     return [u for u, _ in sorted(ranked.items(), key=lambda kv: (kv[1], kv[0]))][:MAX_SECONDARY]
 
 
+TRANSPORT_ERRORS = {"ConnectError", "ConnectTimeout", "ReadTimeout", "ProxyError", "RemoteProtocolError"}
+
+
+def _toggle_www(url: str) -> str:
+    p = urllib.parse.urlparse(url)
+    host = p.netloc[4:] if p.netloc.startswith("www.") else "www." + p.netloc
+    return urllib.parse.urlunparse((p.scheme, host, p.path or "/", "", "", ""))
+
+
 def _today() -> dt.date:
     return dt.datetime.now(dt.UTC).date()
 
@@ -75,6 +84,17 @@ def enrich_website(cs: ClaimSet, ident: CompanyIdentity, registry_website: str |
         return out
     home = fetcher.page(url, ident.org)
     out.requests += home.requests
+    if not home.ok and home.status == 0 and (home.error or "") in TRANSPORT_ERRORS:
+        # The registered hostname does not connect: the register often lists "www.x.no" where only "x.no" answers
+        # (or the reverse). Try the other form once, with its own robots check; costs at most 2 extra requests.
+        alt = _toggle_www(url)
+        alt_ok, used = fetcher.robots_allows(alt, ident.org)
+        out.requests += used
+        if alt_ok is not False:
+            alt_home = fetcher.page(alt, ident.org)
+            out.requests += alt_home.requests
+            if alt_home.ok:
+                home, url, allowed = alt_home, alt, alt_ok
     if not home.ok:
         if home.status in (404, 410):
             cs.unavailable("official_website", "not_available", note=f"registered website returned HTTP {home.status}",

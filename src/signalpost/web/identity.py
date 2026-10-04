@@ -50,6 +50,38 @@ class IdentityResult:
         return self.score >= PUBLISH_THRESHOLD and self.veto is None
 
 
+# Words too common to identify a business on their own (a page about "Nordvik Eiendom" must not match "Eiendom").
+GENERIC_TOKENS = {
+    "eiendom", "eiendommer", "eiendomsutvikling", "holding", "invest", "investering", "group", "gruppen", "norge",
+    "norway", "norsk", "nordic", "service", "services", "bygg", "entreprenor", "consulting", "consult", "solutions",
+    "partner", "partners", "drift", "utvikling", "forvaltning", "handel", "kapital", "management", "teknikk", "industri",
+    "industries", "industrier", "systems", "system", "media", "design", "transport", "restaurant", "butikk", "senter",
+    "center", "international", "sikkerhet", "bolig", "boliger", "utleie", "salg", "tjenester", "produkter", "norden",
+    "scandinavia", "scandinavian", "oslo", "bergen", "trondheim", "stavanger", "kristiansand", "tromso",
+}
+
+
+def street_variants(street: str | None) -> list[str]:
+    """Folded street strings to look for: the whole string and its last comma part ('c/o X, Gate 9' -> 'gate 9').
+    Every variant must still end in a house number, so a bare street name never matches."""
+    if not street:
+        return []
+    out = []
+    for cand in [street, *[p.strip() for p in street.split(",")][-1:]]:
+        f = fold(cand)
+        if f and re.search(r"\d", f) and f not in out:
+            out.append(f)
+    return out
+
+
+def _street_on_page(folded: str, street: str | None) -> bool:
+    return any(re.search(rf"(?<![a-z0-9]){re.escape(v)}(?![a-z0-9])", folded) for v in street_variants(street))
+
+
+def distinctive_tokens(name: str) -> list[str]:
+    return [t for t in core_tokens(name) if len(t) >= 5 and t not in GENERIC_TOKENS and not t.isdigit()]
+
+
 def core_tokens(name: str) -> list[str]:
     return [t for t in fold(name).split() if t not in LEGAL_FORMS]
 
@@ -87,6 +119,15 @@ def assess(ident: CompanyIdentity, pages: list[PageText]) -> IdentityResult:
 
     core = " ".join(core_tokens(ident.name))
     if not core or not re.search(rf"(?<![a-z0-9]){re.escape(core)}(?![a-z0-9])", folded):
+        # Trade name differs from the legal name: accept ONLY with a distinctive name word AND the exact street address
+        # (with house number) AND postcode+city on the page (weakest publishable tier, exactly 0.90).
+        dist = distinctive_tokens(ident.name)
+        hit = [t for t in dist if re.search(rf"(?<![a-z0-9]){re.escape(t)}(?![a-z0-9])", folded)]
+        if dist and len(hit) * 2 >= len(dist) and ident.postcode and ident.city and _street_on_page(folded, ident.street) \
+                and re.search(rf"(?<!\d){ident.postcode}\s+{re.escape(fold(ident.city))}(?![a-z0-9])", folded):
+            loc = _find_literal(text, (ident.street or "").split(",")[-1].strip())
+            return IdentityResult(0.90, ["legal_name_partial", "street_address", "postcode_city"],
+                                  _context(text, *loc) if loc else None)
         return IdentityResult(0.0, [], veto="legal name not found on page")
     signals = ["legal_name"]
     name_loc = _find_literal(text, ident.name) or _find_literal(text, " ".join(ident.name.split()[:-1]) or ident.name)
@@ -95,12 +136,11 @@ def assess(ident: CompanyIdentity, pages: list[PageText]) -> IdentityResult:
         loc = _find_literal(text, needle)
         return _context(text, *loc) if loc else None
 
-    if ident.street:
-        street = fold(ident.street)
-        if street and re.search(rf"(?<![a-z0-9]){re.escape(street)}(?![a-z0-9])", folded):
-            signals.append("street_address")
-            snip = snippet_for(ident.street) or (name_loc and _context(text, *name_loc))
-            return IdentityResult(0.95, signals, snip)
+    if ident.street and _street_on_page(folded, ident.street):
+        signals.append("street_address")
+        snip = snippet_for(ident.street.split(",")[-1].strip()) or snippet_for(ident.street) \
+            or (name_loc and _context(text, *name_loc))
+        return IdentityResult(0.95, signals, snip)
     if ident.postcode and ident.city:
         city = fold(ident.city)
         if re.search(rf"(?<!\d){ident.postcode}\s+{re.escape(city)}(?![a-z0-9])", folded):

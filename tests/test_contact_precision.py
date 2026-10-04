@@ -16,7 +16,7 @@ def vals(cs, field):
 
 
 def test_a_date_is_never_a_phone_number():  # real: "30.04.2026" was published as a phone
-    cs, drops = cands("<p>Publisert 30.04.2026 og 01.12.2025 av oss. Sist oppdatert 3/10/2026.</p>")
+    cs, _ = cands("<p>Publisert 30.04.2026 og 01.12.2025 av oss. Sist oppdatert 3/10/2026.</p>")
     assert vals(cs, "contact_phone") == []
 
 

@@ -273,3 +273,31 @@ def test_registered_domain_never_collapses_unknown_suffixes():
     assert registered_domain("https://a.firma.example/") == "firma.example"
     assert registered_domain("https://a.example/") != registered_domain("https://b.example/")
     assert registered_domain("not a url") == ""
+
+
+def test_hostname_fallback_toggles_www_when_the_registered_host_does_not_connect():
+    def handler(req):
+        if req.url.host == "www.nordvik.example":
+            raise httpx.ConnectError("no route")
+        if req.url.path == "/robots.txt":
+            return httpx.Response(404)
+        return httpx.Response(200, text=GOOD, headers={"content-type": "text/html"})
+    hits = []
+
+    def spy(req):
+        hits.append(req.url.host)
+        return handler(req)
+    f = WebFetcher(Budget(100, 15), transport=httpx.MockTransport(spy), resolver=PUBLIC, sleeper=lambda s: None)
+    cs = ClaimSet()
+    out = enrich_website(cs, OUR, "www.nordvik.example", f, None)
+    c = {x.field: x for x in cs.claims}
+    assert out.state == "verified" and c["official_website"].value.startswith("https://nordvik.example")
+    assert hits[:2] == ["www.nordvik.example", "www.nordvik.example"] or "nordvik.example" in hits
+    # and the other direction, plus a host where neither form connects
+    def dead(req):
+        raise httpx.ConnectError("dns")
+    f2 = WebFetcher(Budget(100, 15), transport=httpx.MockTransport(dead), resolver=PUBLIC, sleeper=lambda s: None)
+    cs2 = ClaimSet()
+    out2 = enrich_website(cs2, OUR, "nordvik.example", f2, None)
+    assert out2.state == "failed" and out2.requests <= 6
+    assert {x.field: x for x in cs2.claims}["official_website"].availability == "failed"
