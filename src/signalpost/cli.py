@@ -104,7 +104,7 @@ def main(argv: list[str] | None = None) -> int:
     client = ApiClient(budget=budget)
     fetcher = None if a.no_web else (WebFetcher(budget, cache_dir=a.page_cache) if a.page_cache else WebFetcher(budget))
     providers = [] if (a.no_web or a.no_llm) else providers_from_env()
-    llm = LlmClient(providers, budget) if providers else None
+    llm = LlmClient(providers, budget, timeout=float(os.environ.get("LLM_TIMEOUT_SECONDS", "90") or 90)) if providers else None
     fixed = tuple(m for m in a.modules.split(",") if m) if a.modules else None
     started_at = utc_now()
     valid = {i.org for i in inputs if i.valid}

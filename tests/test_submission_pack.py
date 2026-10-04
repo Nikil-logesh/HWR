@@ -138,7 +138,7 @@ def test_api_keys_never_appear_in_envelopes_report_or_html(monkeypatch, tmp_path
     monkeypatch.setenv("LLM_PRIMARY_API_KEY", secret)
     f, _, _ = web_stack([PAGE])
     monkeypatch.setattr(cli, "WebFetcher", lambda budget: f)
-    monkeypatch.setattr(cli, "LlmClient", lambda providers, budget: LlmClient(
+    monkeypatch.setattr(cli, "LlmClient", lambda providers, budget, **_kw: LlmClient(
         providers, budget, transport=httpx.MockTransport(lambda r: httpx.Response(401, text=f"bad key {secret}"))))
     inp = tmp_path / "in.txt"
     inp.write_text(f"{ORG}\n")
