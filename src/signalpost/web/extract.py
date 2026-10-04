@@ -6,12 +6,24 @@ import re
 from norway_company_agent.identity import assess_social_identity
 from norway_company_agent.website import normalize_social_url
 
-from .text import PageText
+from .fetch import registered_domain
+from .identity import core_tokens
+from .signals import parse_date
+from .text import PageText, fold
 from .verify import Candidate
 
 EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
-PHONE = re.compile(r"(?<![\d@])(?:\+47[ .]?|0047[ .]?)?(?:\d{2}[ .]?\d{2}[ .]?\d{2}[ .]?\d{2}|\d{3}[ .]?\d{2}[ .]?\d{3})(?!\d)")
+# Norwegian numbers: 8 digits as 2-2-2-2 or 3-2-3, optional +47/0047; single spaces only (dots made dates look like phones).
+PHONE = re.compile(r"(?<![\d@])(?<!\d[./-])(?:\+47 ?|0047 ?)?(?:\d{2} ?\d{2} ?\d{2} ?\d{2}|\d{3} ?\d{2} ?\d{3})(?!\d)(?![./-]\d)")
+NOT_PHONE_LABEL = re.compile(r"org\.?\s?(?:nr|nummer|no)|organisasjons|\bbank|\bkonto(?:nr|nummer)?\b|iban|swift|\bkid\b|\bmva\b|fødsels|postboks|"
+                             r"faks|fax|kundenr|saksnr|ordrenr|fakturanr|ref\.?\s?nr", re.IGNORECASE)
 FAX = re.compile(r"\bfaks?\b|\bfax\b", re.IGNORECASE)
+BAD_LOCAL = re.compile(r"fornavn|etternavn|firstname|lastname|first\.last|dinepost|din\.epost|example|eksempel|"
+                       r"no-?reply|do-?not-?reply|^(name|navn|test|epost|mail|email|user|brukernavn|xxx+|din)$", re.IGNORECASE)
+FREEMAIL = {"gmail.com", "hotmail.com", "hotmail.no", "outlook.com", "outlook.no", "live.com", "live.no", "icloud.com",
+            "me.com", "yahoo.com", "yahoo.no", "msn.com", "online.no", "broadpark.no", "getmail.no", "start.no",
+            "frisurf.no", "c2i.net", "bbnett.no", "lyse.net", "altibox.no", "proton.me", "protonmail.com", "tele2.no",
+            "combo.no", "sol.no", "mac.com", "gmx.com", "gmx.net", "aol.com", "hotmail.co.uk"}
 LLM_CHARS = 6000
 
 
@@ -22,7 +34,42 @@ def _line_with(text: str, needle: str) -> str | None:
     return None
 
 
-def deterministic_candidates(pages: list[PageText], company_name: str) -> list[Candidate]:
+def _block_around(text: str, needle: str, radius: int = 1) -> str:
+    lines = text.split("\n")
+    for i, ln in enumerate(lines):
+        if needle in ln:
+            return "\n".join(lines[max(0, i - radius): i + radius + 1])
+    return ""
+
+
+def email_verdict(email: str, page_url: str, text: str, company_name: str, org: str | None) -> str | None:
+    """None = acceptable; otherwise the reason it is not attributed to this company."""
+    local, _, domain = email.partition("@")
+    domain = domain.lower()
+    if BAD_LOCAL.search(local):
+        return "placeholder or no-reply mailbox"
+    if domain in FREEMAIL or registered_domain(f"http://{domain}/") == registered_domain(page_url):
+        return None
+    block = fold(_block_around(text, email))
+    core = " ".join(core_tokens(company_name))
+    if (core and re.search(rf"(?<![a-z0-9]){re.escape(core)}(?![a-z0-9])", block)) or (org and org in re.sub(r"\D", "", block)):
+        return None
+    return "email domain differs from the site and is not next to the company name"
+
+
+def phone_verdict(match: re.Match[str], text: str) -> str | None:
+    raw = match.group(0).strip()
+    if parse_date(raw):
+        return "looks like a date"
+    ls = text.rfind("\n", 0, match.start()) + 1
+    left = text[ls: match.start()][-28:]
+    if NOT_PHONE_LABEL.search(left):
+        return "labelled as an organisation/bank/fax/reference number"
+    return None
+
+
+def deterministic_candidates(pages: list[PageText], company_name: str, org: str | None = None,
+                             dropped: list[dict[str, str]] | None = None) -> list[Candidate]:
     out: list[Candidate] = []
     seen: set[tuple[str, str]] = set()
 
@@ -32,6 +79,10 @@ def deterministic_candidates(pages: list[PageText], company_name: str) -> list[C
             seen.add(key)
             out.append(c)
 
+    def drop(field: str, value: str, reason: str) -> None:
+        if dropped is not None:
+            dropped.append({"field": field, "value": value[:80], "method": "deterministic", "reason": reason})
+
     for pg in pages:
         desc = pg.meta.get("description") or pg.meta.get("og:description")
         if desc and len(desc) >= 30:
@@ -39,11 +90,21 @@ def deterministic_candidates(pages: list[PageText], company_name: str) -> list[C
         emails = {m for m in pg.mailto if EMAIL.fullmatch(m)} | set(EMAIL.findall(pg.text))
         for em in sorted(emails):
             ln = _line_with(pg.text, em)
-            if ln:
+            if not ln:
+                continue
+            why = email_verdict(em, pg.url, pg.text, company_name, org)
+            if why:
+                drop("contact_email", em, why)
+            else:
                 add(Candidate("contact_email", em, ln, pg.url, "visible_email"))
         for m in PHONE.finditer(pg.text):
             ln = _line_with(pg.text, m.group(0))
-            if ln and not FAX.search(ln):
+            if not ln or FAX.search(ln):
+                continue
+            why = phone_verdict(m, pg.text)
+            if why:
+                drop("contact_phone", m.group(0), why)
+            else:
                 add(Candidate("contact_phone", m.group(0).strip(), ln, pg.url, "visible_phone"))
         for href in pg.social_hrefs:
             norm = normalize_social_url(href)

@@ -5,11 +5,13 @@ At most 1 robots.txt + 1 homepage + N secondary pages per company; every attempt
 from __future__ import annotations
 
 import hashlib
+import json
 import threading
 import time
 import urllib.parse
 import urllib.robotparser
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import httpx
 import tldextract
@@ -51,8 +53,14 @@ class Page:
 
 class WebFetcher:
     def __init__(self, budget: Budget, *, transport: httpx.BaseTransport | None = None, resolver=None,
-                 min_interval: float = 1.0, timeout: float = 10.0, clock=time.monotonic, sleeper=time.sleep):
+                 min_interval: float = 1.0, timeout: float = 10.0, clock=time.monotonic, sleeper=time.sleep,
+                 cache_dir: str | Path | None = None):
+        """cache_dir: DEV TOOL. Records every HTTP exchange (status, headers, body, errors) on disk and replays it,
+        so real pages can be re-analysed offline without hitting sites again. Never commit it (third-party content)."""
         self.budget, self.min_interval, self.clock, self.sleeper = budget, min_interval, clock, sleeper
+        self._cache = Path(cache_dir) if cache_dir else None
+        if self._cache:
+            self._cache.mkdir(parents=True, exist_ok=True)
         self._resolver = resolver
         self._http = httpx.Client(transport=transport, timeout=timeout, follow_redirects=False,
                                   headers={"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml"})
@@ -84,16 +92,52 @@ class WebFetcher:
             if not self.budget.take(org):
                 return None, url, used, "budget_exhausted"
             used += 1
-            self._throttle(urllib.parse.urlparse(url).netloc)
+            replayed = self._cache_load(url)
+            if replayed is None:
+                self._throttle(urllib.parse.urlparse(url).netloc)
             try:
-                resp = self._http.get(url)
+                resp = replayed if replayed is not None else self._http.get(url)
             except httpx.HTTPError as exc:
+                self._cache_store(url, None, type(exc).__name__)
                 return None, url, used, type(exc).__name__
+            if isinstance(resp, str):  # replayed transport error
+                return None, url, used, resp
+            if replayed is None:
+                self._cache_store(url, resp, None)
             if resp.status_code in (301, 302, 303, 307, 308) and resp.headers.get("location"):
                 url = urllib.parse.urljoin(url, resp.headers["location"])
                 continue
             return resp, url, used, None
         return None, url, used, "too_many_redirects"
+
+    def _cache_path(self, url: str) -> Path:
+        return self._cache / hashlib.sha1(url.encode()).hexdigest()[:20]  # type: ignore[operator]
+
+    def _cache_store(self, url: str, resp: httpx.Response | None, error: str | None) -> None:
+        if not self._cache:
+            return
+        base = self._cache_path(url)
+        meta = {"url": url, "error": error}
+        if resp is not None:
+            meta |= {"status": resp.status_code, "headers": {k: v for k, v in resp.headers.items()
+                                                              if k.lower() in ("content-type", "location")},
+                     "encoding": resp.encoding}
+            base.with_suffix(".bin").write_bytes(resp.content[:MAX_BYTES])
+        base.with_suffix(".json").write_text(json.dumps(meta), encoding="utf-8")
+
+    def _cache_load(self, url: str):
+        """A replayed httpx.Response, a str (the recorded transport-error class name), or None (not cached)."""
+        if not self._cache:
+            return None
+        base = self._cache_path(url)
+        if not base.with_suffix(".json").exists():
+            return None
+        meta = json.loads(base.with_suffix(".json").read_text(encoding="utf-8"))
+        if meta.get("error"):
+            return meta["error"]
+        body = base.with_suffix(".bin").read_bytes() if base.with_suffix(".bin").exists() else b""
+        return httpx.Response(meta["status"], headers=meta["headers"], content=body,
+                              request=httpx.Request("GET", url))
 
     def robots_allows(self, url: str, org: str) -> tuple[bool | None, int]:
         """(allowed, requests). allowed=None means robots.txt was unreachable (callers go homepage-only)."""

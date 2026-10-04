@@ -13,3 +13,5 @@ cache/
 
 bench/corpus/
 bench/results/
+
+page_cache/

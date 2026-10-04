@@ -48,6 +48,8 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--profiles-output", default=None, help="also copy the envelopes here (kit-compatible flag)")
     r.add_argument("--report", default=None, help="run report path (default OUT/report.json)")
     r.add_argument("--html", default=None, help="human-readable report (default OUT/report.html; 'none' disables)")
+    r.add_argument("--page-cache", default=os.environ.get("SIGNALPOST_PAGE_CACHE"),
+                   help="DEV: record/replay website responses in this directory (never commit it)")
     r.add_argument("--resume", action="store_true", help="accepted for kit compatibility; runs are idempotent anyway")
     r.add_argument("--checkpoint-every", type=int, default=None, help="accepted for kit compatibility (ignored)")
     r.add_argument("--bulk", "--universe", dest="registry", default=None,
@@ -100,7 +102,7 @@ def main(argv: list[str] | None = None) -> int:
     for sig in (signal.SIGINT, signal.SIGTERM):
         signal.signal(sig, lambda *_: budget.expire())
     client = ApiClient(budget=budget)
-    fetcher = None if a.no_web else WebFetcher(budget)
+    fetcher = None if a.no_web else (WebFetcher(budget, cache_dir=a.page_cache) if a.page_cache else WebFetcher(budget))
     providers = [] if (a.no_web or a.no_llm) else providers_from_env()
     llm = LlmClient(providers, budget) if providers else None
     fixed = tuple(m for m in a.modules.split(",") if m) if a.modules else None
