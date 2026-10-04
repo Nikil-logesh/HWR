@@ -1,25 +1,25 @@
-[  5/100]   4.0 companies/s  elapsed    1.2s  requests 28
-[ 10/100]   5.9 companies/s  elapsed    1.7s  requests 49
-[ 15/100]   8.4 companies/s  elapsed    1.8s  requests 55
-[ 20/100]   8.7 companies/s  elapsed    2.3s  requests 72
-[ 25/100]   3.8 companies/s  elapsed    6.5s  requests 102
-[ 30/100]   4.4 companies/s  elapsed    6.8s  requests 115
-[ 35/100]   4.8 companies/s  elapsed    7.3s  requests 132
-[ 40/100]   5.2 companies/s  elapsed    7.8s  requests 152
-[ 45/100]   5.5 companies/s  elapsed    8.2s  requests 161
-[ 50/100]   4.7 companies/s  elapsed   10.7s  requests 189
-[ 55/100]   5.1 companies/s  elapsed   10.7s  requests 190
-[ 60/100]   5.4 companies/s  elapsed   11.2s  requests 214
-[ 65/100]   5.6 companies/s  elapsed   11.6s  requests 236
-[ 70/100]   6.0 companies/s  elapsed   11.7s  requests 236
-[ 75/100]   6.1 companies/s  elapsed   12.3s  requests 262
-[ 80/100]   6.2 companies/s  elapsed   12.8s  requests 280
-[ 85/100]   6.2 companies/s  elapsed   13.7s  requests 305
-[ 90/100]   6.3 companies/s  elapsed   14.2s  requests 319
-[ 95/100]   6.1 companies/s  elapsed   15.6s  requests 321
-[100/100]   4.4 companies/s  elapsed   22.9s  requests 337
+[  5/100]   1.8 companies/s  elapsed    2.7s  requests 60
+[ 10/100]   2.3 companies/s  elapsed    4.4s  requests 97
+[ 15/100]   2.3 companies/s  elapsed    6.5s  requests 131
+[ 20/100]   1.8 companies/s  elapsed   11.2s  requests 149
+[ 25/100]   1.5 companies/s  elapsed   16.5s  requests 186
+[ 30/100]   1.6 companies/s  elapsed   18.4s  requests 227
+[ 35/100]   1.8 companies/s  elapsed   19.2s  requests 248
+[ 40/100]   1.8 companies/s  elapsed   21.8s  requests 292
+[ 45/100]   2.0 companies/s  elapsed   22.3s  requests 296
+[ 50/100]   1.7 companies/s  elapsed   29.7s  requests 340
+[ 55/100]   1.8 companies/s  elapsed   31.1s  requests 366
+[ 60/100]   1.7 companies/s  elapsed   34.3s  requests 410
+[ 65/100]   1.7 companies/s  elapsed   37.7s  requests 455
+[ 70/100]   1.6 companies/s  elapsed   43.0s  requests 463
+[ 75/100]   1.5 companies/s  elapsed   49.1s  requests 514
+[ 80/100]   1.6 companies/s  elapsed   50.9s  requests 554
+[ 85/100]   1.6 companies/s  elapsed   52.4s  requests 578
+[ 90/100]   1.7 companies/s  elapsed   53.7s  requests 608
+[ 95/100]   1.6 companies/s  elapsed   57.8s  requests 615
+[100/100]   1.6 companies/s  elapsed   64.2s  requests 637
 Run smoke-refresh: 100/100 envelopes (one per input: True), status {'completed': 100}
-Time 44.47s | requests 337 (mean 3.37/company, p95 6) | cost $0.0
+Time 84.97s | requests 637 (mean 6.37/company, p95 10) | cost $0.0
 Coverage (companies with field):
   legal_name                   100  100.0%
   status                       100  100.0%
@@ -31,16 +31,16 @@ Coverage (companies with field):
   financials.total_assets      100  100.0%
   workplaces                    78   78.0%
   registry_website              10   10.0%
-  official_website               6    6.0%
-  website_description            3    3.0%
-  contact_email_1                4    4.0%
-  contact_phone_1                3    3.0%
+  official_website              14   14.0%
+  website_description            8    8.0%
+  contact_email_1               10   10.0%
+  contact_phone_1               11   11.0%
   social_linkedin                0    0.0%
-  social_facebook                0    0.0%
+  social_facebook                5    5.0%
   careers_page                   0    0.0%
   open_positions                 0    0.0%
   hiring_status                  0    0.0%
-  public_activity                1    1.0%
-  latest_activity_date           1    1.0%
+  public_activity                3    3.0%
+  latest_activity_date           3    3.0%
 Changes: 0 in 0 companies | dropped web facts: 3 | carried forward: 0
-wrote out/smoke3/refresh/envelopes.jsonl and out/smoke3/refresh/report.json and out/smoke3/report.html
+wrote out/smoke4/refresh/envelopes.jsonl and out/smoke4/refresh/report.json and out/smoke4/report.html

@@ -41,7 +41,7 @@ Environment variables (all optional): `REQUEST_BUDGET_TOTAL`, `REQUEST_BUDGET_PE
 ## Expected cost
 | | requests | third-party cost |
 |---|---|---|
-| **Measured, 100 companies** (smoke test, no LLM, 10 of them list a website) | 343 (3.43 per company, p95 7, max 9), 52 s | $0 |
+| **Measured, 100 companies** (smoke test, no LLM, discovery on; 10 list a website) | 658 (6.58 per company, p95 10, max 13), 99 s | $0 |
 | **Measured, 200 random companies without a registered website** (discovery on, no LLM) | 1,290 (6.45 per company incl. per-company register calls), 128 s; 12 sites discovered | $0 |
 | **Measured, 150 companies that all list a website** (real-website run, no LLM) | 1,146 (7.6 per company, max 15 = the per-company cap), 305 s | $0 |
 | **Measured, 1,500 companies** (bulk roles/workplaces/entity, no LLM) | 1,834 (1.22 per company), 288 s | $0 |
