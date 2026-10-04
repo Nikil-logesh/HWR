@@ -150,7 +150,7 @@ def enrich_website(cs: ClaimSet, ident: CompanyIdentity, registry_website: str |
 
     by_url = {p.final_url: p for p, _ in pages}
     corpus = {t.url: t.corpus for t in texts}
-    cands = deterministic_candidates(texts, ident.name, ident.org, out.dropped)
+    cands = deterministic_candidates(texts, ident.name, ident.org, out.dropped, ident)
     have_desc = any(c.field == "website_description" for c in cands)
     if llm and llm.enabled:
         cands += [c for c in llm_candidates(llm.complete_json(llm_prompt(texts), ident.org), texts)

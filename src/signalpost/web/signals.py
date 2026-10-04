@@ -37,7 +37,7 @@ PORTALS = {"webcruiter": "Webcruiter", "easycruit": "Easycruit", "jobylon": "Job
            "recman": "Recman", "varbi": "Varbi", "lever.co": "Lever", "greenhouse.io": "Greenhouse",
            "workable.com": "Workable", "personio": "Personio", "hirehive": "HireHive", "jobbnorge": "Jobbnorge",
            "reachmee": "ReachMee", "jobs.lever": "Lever", "smartrecruiters": "SmartRecruiters"}
-CAREER_RE = re.compile(r"karriere|jobb\b|jobbe|jobs?\b|careers?|ledige[-_ ]stillinger|stillinger|rekruttering|"
+CAREER_RE = re.compile(r"karriere|jobb\b|jobbe\b|jobs?\b|careers?|ledige[-_ ]stillinger|stillinger|rekruttering|"
                        r"vacanc|work[-_ ]with[-_ ]us|bli[-_ ]med|join[-_ ]us", re.IGNORECASE)
 NEWS_RE = re.compile(r"nyheter|aktuelt|\bnews\b|\bblog+\b|presse|\bpress\b|nytt\b|artikler", re.IGNORECASE)
 JOB_PATH_RE = re.compile(r"/(stilling|stillinger|jobb|jobs?|karriere|careers?|vacanc\w*|position\w*|ledige[-_]stillinger)/",

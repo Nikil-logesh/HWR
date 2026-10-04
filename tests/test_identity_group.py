@@ -39,3 +39,9 @@ def test_own_number_with_one_parent_mentioned_is_still_a_match():
 def test_stray_numbers_that_merely_pass_modulus_11_do_not_trigger_the_group_veto():
     r = res(ID, f"<p>Nordvik F3 Næring AS Org.nr {spaced(OURS)}</p><p>Varenr {spaced(B)} og {spaced(C)} og {spaced(D)}</p>")
     assert r.publishable
+
+
+def test_org_number_without_the_registered_name_is_publishable_but_flagged_and_below_certain():  # real: Scala Bø / "Fredriksborg Eiendom AS"
+    r = res(ID, f"<p>Annen Eiendom AS Storgata 5 1607 Fredrikstad Org.nr: {spaced(OURS)}</p>")
+    assert r.publishable and r.score == 0.95 and r.signals == ["organisation_number", "legal_name_not_on_page"]
+    assert res(ID, f"<p>Nordvik F3 Næring AS Org.nr: {spaced(OURS)}</p>").score == 1.0

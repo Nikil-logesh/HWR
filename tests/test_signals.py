@@ -101,6 +101,11 @@ def test_discover_links_prefers_shallow_same_site_and_recognises_portals():
     assert s.feed_urls == ["https://nordvik.example/feed.xml"]
 
 
+def test_how_we_work_is_not_a_careers_link():  # real: /news/slikjobbervi ("Slik jobber vi" = how we work) was a careers page
+    anchors = [("https://nordvik.example/news/slikjobbervi", "Slik jobber vi"), ("https://nordvik.example/jobbe-hos-oss", "Jobbe hos oss?")]
+    assert sg.discover_links("https://nordvik.example/", anchors, []).careers_urls == ["https://nordvik.example/jobbe-hos-oss"]
+
+
 # ---------- hiring ----------
 JOBLD = """<script type="application/ld+json">{"@context":"https://schema.org","@type":"JobPosting","title":"Tømrer / Byggfagarbeider",
 "datePosted":"2026-09-20","validThrough":"2026-11-01","hiringOrganization":{"@type":"Organization","name":"Nordvik Bygg AS"},

@@ -124,6 +124,11 @@ def assess(ident: CompanyIdentity, pages: list[PageText]) -> IdentityResult:
         return IdentityResult(0.1, veto=f"page lists {len(others)} other organisation numbers (group or portfolio site)",
                               foreign_org=min(others))
     if ours:
+        core = " ".join(core_tokens(ident.name))
+        if core and not re.search(rf"(?<![a-z0-9]){re.escape(core)}(?![a-z0-9])", folded):
+            # the number matches but the register's name appears nowhere (renamed, or the site pairs the number with another
+            # company's name): still publishable, but not "certain", and the method string says so
+            return IdentityResult(0.95, ["organisation_number", "legal_name_not_on_page"], _context(text, ours.start(), ours.end()))
         return IdentityResult(1.0, ["organisation_number"], _context(text, ours.start(), ours.end()))
     if foreign:
         return IdentityResult(0.1, veto=f"page states a different organisation number ({foreign})", foreign_org=foreign)
